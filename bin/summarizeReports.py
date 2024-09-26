@@ -1,0 +1,51 @@
+#!/usr/bin/env python
+import argparse
+import json
+import os
+import datetime
+import pandas as pd
+
+######################################################################################
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="Summarizes a set of json files for QC parameters")
+    parser.add_argument("--g", "-gariOut", type=str, help="GARI output directory with folder per sample")
+    args = parser.parse_args()
+
+    timeStamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    outfile = "GARI_QC_report_" + timeStamp + ".csv"
+
+    json_list = []
+
+    for ofile in os.listdir(args.g):
+        if ofile.endswith(".json"):
+            print(args.g + '/' + ofile)
+
+            with open(args.g + '/' + ofile, 'rt') as f:
+                data = json.load(f)
+                
+                print(data)
+                # format floats to make sure they always show two digits --> changes them to string...
+                for val in data["assembly"]:
+                    if isinstance(data["assembly"][val], float) or isinstance(data["assembly"][val], int):
+                        data["assembly"][val] = "{:.2f}".format(data["assembly"][val])
+                for val in data["reads"]:
+                    if isinstance(data["reads"][val], float)or isinstance(data["reads"][val], int):
+                        data["reads"][val] = "{:.2f}".format(data["reads"][val])
+                for val in data["Kraken2"]:
+                    if isinstance(data["Kraken2"][val], float) or isinstance(data["Kraken2"][val], int):
+                        data["Kraken2"][val] = "{:.2f}".format(data["Kraken2"][val])
+                print(data)
+
+                json_list.append(pd.json_normalize(data))
+
+    df = pd.concat(json_list)
+    # remove the nested structure of the json and rename columns
+    data_renamed = {}
+    for col in df:
+        newCol = col.split(".")[-1]
+        data_renamed[col] = newCol
+    df_renamed = df.rename(columns=data_renamed)
+    
+
+    df_renamed.to_csv(outfile, index=False)
