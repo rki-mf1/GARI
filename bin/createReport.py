@@ -304,10 +304,9 @@ def checkThresholds(QCHash, refSpecies, thresh_Hash):
   if not thresh_Hash["flag_min_length"] == "NA": # only execute if thresholds not NA
     if not thresh_Hash["flag_min_length"] <=  QCHash["assembly"]["assembly_length"] <= thresh_Hash["flag_max_length"]:
       flagged=True
-      errorList.append("GC_content")
+      errorList.append("Assembly_length")
       if not thresh_Hash["fail_min_length"] <=  QCHash["assembly"]["assembly_length"] <= thresh_Hash["fail_max_length"]:
         error = True
-        errorList.append("Assembly_length")
 
 # Total QC warnings allowed before automatical FAIL
   if len(errorList) > maxFlagsAllowed:

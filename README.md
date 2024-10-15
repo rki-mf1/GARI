@@ -6,14 +6,11 @@
 
 # Generic Assembly and Reconstruction pIpeline (GARI)
 
-<p align="left"><picture><img src="assets/GARI_logo.jpg" alt="GARI" width="500"></picture></p>
-
-
 ## Introduction
 
 **G**eneric **A**ssembly and **R**econstruction p**I**peline (GARI)
 
-Nextflow pipeline for the genome reconstruction of IGS related pathogens.
+Nextflow pipeline for the denovo genome reconstruction of bacterial pathogens.
 The pipeline comprises the following steps/modules:
 1. Read QC
 	- [fastp](https://github.com/OpenGene/fastp) to remove remaining adapters and perform very basic quality trimming
@@ -23,12 +20,14 @@ The pipeline comprises the following steps/modules:
     - [bbmap](https://jgi.doe.gov/data-and-tools/software-tools/bbtools/) to rename contigs and remove contigs < 200bp
 3. Assembly QC
 	- [assembly-scan](https://github.com/rpetit3/assembly-scan) to produce general assembly statistics
-    - [bbmap](https://jgi.doe.gov/data-and-tools/software-tools/bbtools/) to remap the reads to the assembly and caluclate coverage, etc.
+    - [bbmap](https://jgi.doe.gov/data-and-tools/software-tools/bbtools/) to remap the reads to the assembly and calculate coverage, etc.
     - [Kraken2](https://github.com/DerrickWood/kraken2) to check for contamination
     - [FastANI](https://github.com/ParBLiSS/FastANI) to identify the reference genome with the highest nucleotide identity.
   	- [BUSCO](https://busco.ezlab.org/) to check for genomic completeness using conserved single-copy core genes
     - [CheckM](https://github.com/Ecogenomics/CheckM) to check for genomic completeness and contamination using conserved single-copy core genes
-    
+
+
+<p align="center"><picture><img src="assets/GARI_workflow.png" alt="GARI"></picture></p>
 
 <!-- TODO nf-core:
    Complete this sentence with a 2-3 sentence summary of what types of data the pipeline ingests, a brief overview of the
@@ -105,6 +104,13 @@ S2,/path/to/S2_R1.fastq.gz,/path/to/S2_R2.fastq.gz,Acinetobacter baumannii
 ```
 A samplesheet like the one shown above can be created using the python script 'createSampleSheet_GARI.py' within the bin folder. 
 Given a directory containing paired-end reads and a seperator/delimiter to reduce the filename to a sampleID this script will create a samplesheet directly usable for GARI (for more information on usage check the help function of the python script). If no species information can or is provided the species field will be filled with NA. In this case no comparison to the identified reference will be performed.
+Then run in QC-mode (--qc_mode true) assemblies need to be provided as an input. For this purpose assemblies are added the the fastq_1 column while the fastq_2 column is left empty. A **samplesheet in QC-mode** would look like:
+```csv
+sample,fastq_1,fastq_2,species
+S1,/path/to/S1_ASM.fasta,,Escherichia coli
+S2,/path/to/S2_ASM.fasta,,Acinetobacter baumannii
+...
+```
 
 The **reference** list, that must be provided, is a tab separated file with two fields 1. the path to a reference file and 2. the species name. The references provided are used for the reference identification with fastANI the species names will be used to compare to the expected species provided in the samplesheet. Strain information can be given as well as seen below. GARI will then pick the reference with the highest identity and use its statistics for comparison. Its is possible to use a single reference by just having one entry in the reference list.
 An example of a reference list could look like:
@@ -203,5 +209,14 @@ This pipeline uses code and infrastructure developed and maintained by the [nf-c
 > **The nf-core framework for community-curated bioinformatics pipelines.**
 >
 > Philip Ewels, Alexander Peltzer, Sven Fillinger, Harshil Patel, Johannes Alneberg, Andreas Wilm, Maxime Ulysse Garcia, Paolo Di Tommaso & Sven Nahnsen.
->
 > _Nat Biotechnol._ 2020 Feb 13. doi: [10.1038/s41587-020-0439-x](https://dx.doi.org/10.1038/s41587-020-0439-x).
+>
+> Shifu Chen, Yanqing Zhou, Yaru Chen, Jia Gu, fastp: an ultra-fast all-in-one FASTQ preprocessor, Bioinformatics, Volume 34, Issue 17, September 2018, Pages i884–i890, https://doi.org/10.1093/bioinformatics/bty560
+>
+>  Prjibelski, A., Antipov, D., Meleshko, D., Lapidus, A., & Korobeynikov, A. (2020). Using SPAdes de novo assembler. Current Protocols in Bioinformatics, 70, e102. doi: 10.1002/cpbi.102 
+>
+> Wood, D.E., Lu, J. & Langmead, B. Improved metagenomic analysis with Kraken 2. Genome Biol 20, 257 (2019). https://doi.org/10.1186/s13059-019-1891-0
+>
+> Felipe A. Simão, Robert M. Waterhouse, Panagiotis Ioannidis, Evgenia V. Kriventseva, Evgeny M. Zdobnov, BUSCO: assessing genome assembly and annotation completeness with single-copy orthologs, Bioinformatics, Volume 31, Issue 19, October 2015, Pages 3210–3212, https://doi.org/10.1093/bioinformatics/btv351
+>
+> Parks DH, Imelfort M, Skennerton CT, Hugenholtz P, Tyson GW. CheckM: assessing the quality of microbial genomes recovered from isolates, single cells, and metagenomes. Genome Res. 2015 Jul;25(7):1043-55. doi: 10.1101/gr.186072.114. Epub 2015 May 14. PMID: 25977477; PMCID: PMC4484387.
