@@ -57,6 +57,20 @@
                 "flag_min_GC": 38.5,
                 "nGenomes": 9542
         },
+        "Acinetobacter nosocomialis": {
+                "kraken2_targetID": 469,
+                "flag_max_length": 4114768.9,
+                "fail_max_length": 4387934,
+                "flag_min_length": 3817224.9,
+                "fail_min_length": 3589873,
+                "flag_checkM_complete": 91.681,
+                "fail_checkM_complete": 89.32,
+                "flag_checkM_contamination": 3.968,
+                "fail_checkM_contamination": 10.18,
+                "flag_max_GC": 40.5,
+                "flag_min_GC": 38.5,
+                "nGenomes": 292
+        },
         "Acinetobacter pittii": {
                 "kraken2_targetID": 469,
                 "flag_max_length": 4189062.8,
@@ -112,6 +126,20 @@
                 "flag_max_GC": 67.5,
                 "flag_min_GC": 65.5,
                 "nGenomes": 561
+        },
+        "Burkholderia cepacia": {
+                "kraken2_targetID": 32008,
+                "flag_max_length": 8954595,
+                "fail_max_length": 9528706,
+                "flag_min_length": 8179542,
+                "fail_min_length": 6467321,
+                "flag_checkM_complete": 98.56,
+                "fail_checkM_complete": 90.8,
+                "flag_checkM_contamination": 4.575,
+                "fail_checkM_contamination": 5.7,
+                "flag_max_GC": 67,
+                "flag_min_GC": 66,
+                "nGenomes": 286
         },
         "Burkholderia multivorans": {
                 "kraken2_targetID": 32008,
@@ -197,6 +225,48 @@
                 "flag_min_GC": 27.5,
                 "nGenomes": 764
         },
+        "Corynebacterium diphtheriae": {
+                "kraken2_targetID": 1716,
+                "flag_max_length": 2487877.5,
+                "fail_max_length": 2877163,
+                "flag_min_length": 2357918.1,
+                "fail_min_length": 2203210,
+                "flag_checkM_complete": 97.18,
+                "fail_checkM_complete": 91.27,
+                "flag_checkM_contamination": 0.23,
+                "fail_checkM_contamination": 19.1,
+                "flag_max_GC": 54,
+                "flag_min_GC": 53.5,
+                "nGenomes": 420
+        },
+        "Enterobacter asburiae": {
+                "kraken2_targetID": 547,
+                "flag_max_length": 5305255.2,
+                "fail_max_length": 5682426,
+                "flag_min_length": 4562953.6,
+                "fail_min_length": 4423267,
+                "flag_checkM_complete": 98.678,
+                "fail_checkM_complete": 96.36,
+                "flag_checkM_contamination": 1.52,
+                "fail_checkM_contamination": 5.39,
+                "flag_max_GC": 56,
+                "flag_min_GC": 54.5,
+                "nGenomes": 467
+        },
+        "Enterobacter bugandensis": {
+                "kraken2_targetID": 547,
+                "flag_max_length": 4971415.2,
+                "fail_max_length": 5440939,
+                "flag_min_length": 4656312.6,
+                "fail_min_length": 4452943,
+                "flag_checkM_complete": 99.23,
+                "fail_checkM_complete": 96.84,
+                "flag_checkM_contamination": 0.841000000000001,
+                "fail_checkM_contamination": 8.16,
+                "flag_max_GC": 56.5,
+                "flag_min_GC": 55,
+                "nGenomes": 214
+        },
         "Enterobacter cloacae": {
                 "kraken2_targetID": 547,
                 "flag_max_length": 5396866.7,
@@ -225,6 +295,34 @@
                 "flag_min_GC": 53.5,
                 "nGenomes": 3643
         },
+        "Enterobacter kobei": {
+                "kraken2_targetID": 547,
+                "flag_max_length": 5301052.5,
+                "fail_max_length": 5761677,
+                "flag_min_length": 4678660.5,
+                "fail_min_length": 4509670,
+                "flag_checkM_complete": 98.98,
+                "fail_checkM_complete": 92.9,
+                "flag_checkM_contamination": 1.52,
+                "fail_checkM_contamination": 4.27,
+                "flag_max_GC": 55.5,
+                "flag_min_GC": 54,
+                "nGenomes": 366
+        },
+        "Enterobacter roggenkampii": {
+                "kraken2_targetID": 547,
+                "flag_max_length": 5198428.2,
+                "fail_max_length": 5689850,
+                "flag_min_length": 4669007.2,
+                "fail_min_length": 4122841,
+                "flag_checkM_complete": 98.75,
+                "fail_checkM_complete": 93.56,
+                "flag_checkM_contamination": 1.478,
+                "fail_checkM_contamination": 17.28,
+                "flag_max_GC": 57,
+                "flag_min_GC": 55,
+                "nGenomes": 494
+        },
         "Enterococcus faecalis": {
                 "kraken2_targetID": 1350,
                 "flag_max_length": 3165974,
@@ -252,6 +350,20 @@
                 "flag_max_GC": 39.5,
                 "flag_min_GC": 37,
                 "nGenomes": 4001
+        },
+        "Escherichia albertii": {
+                "kraken2_targetID": 561,
+                "flag_max_length": 5112986.3,
+                "fail_max_length": 5352578,
+                "flag_min_length": 4621836,
+                "fail_min_length": 4396564,
+                "flag_checkM_complete": 98.559,
+                "fail_checkM_complete": 91,
+                "flag_checkM_contamination": 1.77,
+                "fail_checkM_contamination": 7.99,
+                "flag_max_GC": 50,
+                "flag_min_GC": 49.5,
+                "nGenomes": 270
         },
         "Haemophilus influenzae": {
                 "kraken2_targetID": 724,
@@ -309,8 +421,21 @@
                 "flag_min_GC": 54.5,
                 "nGenomes": 613
         },
+        "Klebsiella oxytoca": {
+                "kraken2_targetID": 570,
+                "flag_max_length": 6392309,
+                "fail_max_length": 6859794,
+                "flag_min_length": 5789018,
+                "fail_min_length": 5394761,
+                "flag_checkM_complete": 98.21,
+                "fail_checkM_complete": 93.8,
+                "flag_checkM_contamination": 2.29,
+                "fail_checkM_contamination": 7.61,
+                "flag_max_GC": 55.5,
+                "flag_min_GC": 53,
+                "nGenomes": 451
+        },
         "Klebsiella pneumoniae": {
-                "flag_max_total_contigs": 400,
                 "kraken2_targetID": 570,
                 "flag_max_length": 5845494.4,
                 "fail_max_length": 6616858,
@@ -379,6 +504,48 @@
                 "flag_max_GC": 39,
                 "flag_min_GC": 37.5,
                 "nGenomes": 5179
+        },
+        "Listeria seeligeri": {
+                "kraken2_targetID": 1637,
+                "flag_max_length": 2982233.9,
+                "fail_max_length": 3119950,
+                "flag_min_length": 2812708.5,
+                "fail_min_length": 2735504,
+                "flag_checkM_complete": 99.05,
+                "fail_checkM_complete": 94.54,
+                "flag_checkM_contamination": 1.37,
+                "fail_checkM_contamination": 5.45,
+                "flag_max_GC": 38,
+                "flag_min_GC": 37,
+                "nGenomes": 252
+        },
+        "Morganella morganii": {
+                "kraken2_targetID": 581,
+                "flag_max_length": 4268570.6,
+                "fail_max_length": 4658427,
+                "flag_min_length": 3797551,
+                "fail_min_length": 3513100,
+                "flag_checkM_complete": 88.344,
+                "fail_checkM_complete": 83.51,
+                "flag_checkM_contamination": 16.348,
+                "fail_checkM_contamination": 27.68,
+                "flag_max_GC": 52,
+                "flag_min_GC": 50,
+                "nGenomes": 343
+        },
+        "Mycobacterium avium": {
+                "kraken2_targetID": 1763,
+                "flag_max_length": 5524913.9,
+                "fail_max_length": 5987952,
+                "flag_min_length": 4789745.3,
+                "fail_min_length": 4509391,
+                "flag_checkM_complete": 95.473,
+                "fail_checkM_complete": 90.23,
+                "flag_checkM_contamination": 4.81,
+                "fail_checkM_contamination": 10.8,
+                "flag_max_GC": 69.5,
+                "flag_min_GC": 68,
+                "nGenomes": 274
         },
         "Mycobacterium tuberculosis": {
                 "kraken2_targetID": 1763,
@@ -450,6 +617,20 @@
                 "flag_min_GC": 38.5,
                 "nGenomes": 1224
         },
+        "Providencia rettgeri": {
+                "kraken2_targetID": 586,
+                "flag_max_length": 4846555.3,
+                "fail_max_length": 5257078,
+                "flag_min_length": 4351600.8,
+                "fail_min_length": 4023756,
+                "flag_checkM_complete": 97.412,
+                "fail_checkM_complete": 92.52,
+                "flag_checkM_contamination": 4.645,
+                "fail_checkM_contamination": 9.8,
+                "flag_max_GC": 43,
+                "flag_min_GC": 40,
+                "nGenomes": 222
+        },
         "Pseudomonas aeruginosa": {
                 "kraken2_targetID": 286,
                 "flag_max_length": 7087454.9,
@@ -463,6 +644,20 @@
                 "flag_max_GC": 67,
                 "flag_min_GC": 63.5,
                 "nGenomes": 9940
+        },
+        "Pseudomonas putida": {
+                "kraken2_targetID": 286,
+                "flag_max_length": 6609140.5,
+                "fail_max_length": 7467685,
+                "flag_min_length": 5623251.2,
+                "fail_min_length": 4596354,
+                "flag_checkM_complete": 97.15,
+                "fail_checkM_complete": 92.04,
+                "flag_checkM_contamination": 2.55,
+                "fail_checkM_contamination": 9.85,
+                "flag_max_GC": 64.5,
+                "flag_min_GC": 59.5,
+                "nGenomes": 302
         },
         "Salmonella enterica": {
                 "kraken2_targetID": 590,
@@ -506,6 +701,20 @@
                 "flag_min_GC": 32.5,
                 "nGenomes": 16882
         },
+        "Staphylococcus capitis": {
+                "kraken2_targetID": 1279,
+                "flag_max_length": 2632124.4,
+                "fail_max_length": 2917808,
+                "flag_min_length": 2417657.8,
+                "fail_min_length": 2344192,
+                "flag_checkM_complete": 97.9,
+                "fail_checkM_complete": 97.13,
+                "flag_checkM_contamination": 0.64,
+                "fail_checkM_contamination": 10.66,
+                "flag_max_GC": 34,
+                "flag_min_GC": 32.5,
+                "nGenomes": 293
+        },
         "Staphylococcus epidermidis": {
                 "kraken2_targetID": 1279,
                 "flag_max_length": 2676140.4,
@@ -519,6 +728,20 @@
                 "flag_max_GC": 33,
                 "flag_min_GC": 31.5,
                 "nGenomes": 1677
+        },
+        "Staphylococcus saprophyticus": {
+                "kraken2_targetID": 1279,
+                "flag_max_length": 2731756,
+                "fail_max_length": 2917632,
+                "flag_min_length": 2558531.6,
+                "fail_min_length": 2433819,
+                "flag_checkM_complete": 98.778,
+                "fail_checkM_complete": 97.71,
+                "flag_checkM_contamination": 0.94,
+                "fail_checkM_contamination": 4.42,
+                "flag_max_GC": 33.5,
+                "flag_min_GC": 33,
+                "nGenomes": 219
         },
         "Stenotrophomonas maltophilia": {
                 "kraken2_targetID": 40323,
@@ -548,6 +771,20 @@
                 "flag_min_GC": 35,
                 "nGenomes": 1809
         },
+        "Streptococcus dysgalactiae": {
+                "kraken2_targetID": 1301,
+                "flag_max_length": 2255586.2,
+                "fail_max_length": 2515850,
+                "flag_min_length": 2013413.8,
+                "fail_min_length": 1858964,
+                "flag_checkM_complete": 91.276,
+                "fail_checkM_complete": 88.18,
+                "flag_checkM_contamination": 1.83,
+                "fail_checkM_contamination": 3.37,
+                "flag_max_GC": 40.5,
+                "flag_min_GC": 39,
+                "nGenomes": 207
+        },
         "Streptococcus pneumoniae": {
                 "kraken2_targetID": 1301,
                 "flag_max_length": 2166781.9,
@@ -576,6 +813,20 @@
                 "flag_min_GC": 38,
                 "nGenomes": 2322
         },
+        "Vibrio alginolyticus": {
+                "kraken2_targetID": 662,
+                "flag_max_length": 5459017.5,
+                "fail_max_length": 6096906,
+                "flag_min_length": 5096086.5,
+                "fail_min_length": 4954044,
+                "flag_checkM_complete": 98.84,
+                "fail_checkM_complete": 94.7,
+                "flag_checkM_contamination": 2.63,
+                "fail_checkM_contamination": 16.03,
+                "flag_max_GC": 45,
+                "flag_min_GC": 44,
+                "nGenomes": 336
+        },
         "Vibrio cholerae": {
                 "kraken2_targetID": 662,
                 "flag_max_length": 4121382.8,
@@ -603,5 +854,19 @@
                 "flag_max_GC": 46,
                 "flag_min_GC": 44,
                 "nGenomes": 2549
+        },
+        "Yersinia enterocolitica": {
+                "kraken2_targetID": 629,
+                "flag_max_length": 4782007,
+                "fail_max_length": 5059344,
+                "flag_min_length": 4427134.6,
+                "fail_min_length": 4325608,
+                "flag_checkM_complete": 97.286,
+                "fail_checkM_complete": 91.52,
+                "flag_checkM_contamination": 3.37,
+                "fail_checkM_contamination": 5.52,
+                "flag_max_GC": 47.5,
+                "flag_min_GC": 46.5,
+                "nGenomes": 359
         }
 }
