@@ -28,7 +28,7 @@
                 "fail_min_length": "NA",
                 "flag_max_GC": "NA",
                 "flag_min_GC": "NA"
-    },
+        },
         "Escherichia coli": {
                 "kraken2_targetID": 561,
                 "flag_max_length": 5443325.4,

@@ -83,6 +83,12 @@
                     "description": "Enable to output results of all processes not just the final results.",
                     "fa_icon": "fas fa-copy"
                 },
+                "classify_kraken": {
+                    "type": "boolean",
+                    "default": "false",
+                    "description": "Use the defined thresholds to classify if enough of the reads and the assembly can be assigned to the correct phylogenetic groups (Very dependent on the kraken2 database used - does not work well with the babykraken DB for many bacterial species.).",
+                    "fa_icon": "fas fa-copy"
+                },
                 "fastp_params": {
                     "type": "string",
                     "default": "--detect_adapter_for_pe",
