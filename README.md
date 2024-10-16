@@ -60,8 +60,6 @@ input: '/path/to/input/samplesheet.csv'
 outdir: '/path/to/output'
 
 reference: '/path/to/ref_list.csv'
-
-busco_lin: 'enterobacterales_odb10'
 ```
 
 The additional flags in the command e.g. "-profile" will define how the pipeline is executed e.g. singularity, conda, mamba or docker (singularity is advised if available). 
@@ -104,7 +102,7 @@ S2,/path/to/S2_R1.fastq.gz,/path/to/S2_R2.fastq.gz,Acinetobacter baumannii
 ```
 A samplesheet like the one shown above can be created using the python script 'createSampleSheet_GARI.py' within the bin folder. 
 Given a directory containing paired-end reads and a seperator/delimiter to reduce the filename to a sampleID this script will create a samplesheet directly usable for GARI (for more information on usage check the help function of the python script). If no species information can or is provided the species field will be filled with NA. In this case no comparison to the identified reference will be performed.
-Then run in QC-mode (--qc_mode true) assemblies need to be provided as an input. For this purpose assemblies are added the the fastq_1 column while the fastq_2 column is left empty. A **samplesheet in QC-mode** would look like:
+When run in QC-mode (--qc_mode true) assemblies need to be provided as an input in the samplesheet. For this purpose assemblies are added the the fastq_1 column while the fastq_2 column is left empty. A **samplesheet in QC-mode** would look like:
 ```csv
 sample,fastq_1,fastq_2,species
 S1,/path/to/S1_ASM.fasta,,Escherichia coli
@@ -115,13 +113,14 @@ S2,/path/to/S2_ASM.fasta,,Acinetobacter baumannii
 The **reference** list, that must be provided, is a tab separated file with two fields 1. the path to a reference file and 2. the species name. The references provided are used for the reference identification with fastANI the species names will be used to compare to the expected species provided in the samplesheet. Strain information can be given as well as seen below. GARI will then pick the reference with the highest identity and use its statistics for comparison. Its is possible to use a single reference by just having one entry in the reference list.
 An example of a reference list could look like:
 
-`ref_list.csv`:
+`ref_list.tsv`:
 ```
 /path/to/GCF_000005845.2_ASM584v2_genomic.fna.gz Escherichia coli str. K-12 substr. MG1655
 /path/to/GCF_000006945.2_ASM694v2_genomic.fna.gz Salmonella enterica subsp. enterica serovar Typhimurium str. LT2
 /path/to/GCF_000008865.2_ASM886v2_genomic.fna.gz Escherichia coli O157:H7 str. Sakai
 ...
 ```
+A basic bash script [`downloadGenomes.sh`](bin/reference_list_setup/downloadGenomes.sh) to download bacterial reference genomes and create a reference list required for GARI are provided and can be executed before running the pipeline (folder bin/reference_list_setup). The script will download RefSeq reference genomes for all species provided in the input file [`bacteria_species.txt`](bin/reference_list_setup/bacteria_species.txt) and create the reference list. But feel free to adjust [`bacteria_species.txt`](bin/reference_list_setup/bacteria_species.txt) to your needs and add or remove species. **NOTE: to execute these scripts the NCBI datasets CLI & python(v.3+) are expected to be present in your PATH.**
 
 The **krakenDB** is the path of the kraken2 database used to classify reads and assembly. Some precomuted Kraken2 databses can be found [here](https://benlangmead.github.io/aws-indexes/k2).
 
