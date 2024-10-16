@@ -14,7 +14,7 @@ class WorkflowGari {
 
 
         if (!params.reference) {
-            Nextflow.error "Reference genome fasta file not specified with e.g. '--reference ref.fa' or via a detectable config file."
+            Nextflow.error "Reference list not specified with e.g. '--reference ref_list.tsv' or via a detectable config file."
         }
     }
 
@@ -38,7 +38,7 @@ class WorkflowGari {
         String yaml_file_text  = "id: '${workflow.manifest.name.replace('/','-')}-summary'\n"
         yaml_file_text        += "description: ' - this information is collected when the pipeline is started.'\n"
         yaml_file_text        += "section_name: '${workflow.manifest.name} Workflow Summary'\n"
-        yaml_file_text        += "section_href: 'https://github.com/${workflow.manifest.name}'\n"
+        yaml_file_text        += "section_href: https://github.com/rki-mf1/GARI'\n"
         yaml_file_text        += "plot_type: 'html'\n"
         yaml_file_text        += "data: |\n"
         yaml_file_text        += "${summary_section}"
@@ -56,8 +56,6 @@ class WorkflowGari {
         // Uncomment function in methodsDescriptionText to render in MultiQC report
         def citation_text = [
                 "Tools used in the workflow included:",
-                "FastQC (Andrews 2010),",
-                "MultiQC (Ewels et al. 2016)",
                 "."
             ].join(' ').trim()
 
