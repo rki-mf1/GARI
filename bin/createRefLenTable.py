@@ -24,7 +24,7 @@ def getLenFA(faPath):
 #####################################################################################
 
 if __name__ == '__main__':
-    import argparse, json
+    import argparse
 
     parser = argparse.ArgumentParser(description="Creates a table with lengths per reference in list")
     parser.add_argument("--r", "-refList", type=str, required=True, help="List of references")
