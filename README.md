@@ -139,16 +139,15 @@ GARI outputs a variety of assembly and assembly quality statistics that can be f
 | parameter | only species specific | default threshold | description |
 |---|---|---|---|
 flag_max_total_contigs | NO | 500 | - |
-flag_min_BUSCO_S | NO | 98 | - |
-fail_min_BUSCO_S | NO | 95 | - |
+flag_min_BUSCO_S | NO | 95 | - |
+fail_min_BUSCO_S | NO | 90 | - |
 flag_max_BUSCO_D | NO | 1 | - |
-fail_max_BUSCO_D | NO | 2 | - |
+fail_max_BUSCO_D | NO | 5 | - |
 flag_AvgCov | NO | 50 | - |
 fail_AvgCov | NO | 30 | - |
 flag_PercMapped | NO | 98 | - |
 fail_PercMapped | NO | 90 | - |
-flag_ref_ident | NO | 98 | - |
-fail_ref_ident | NO | 95 | - |
+flag_ref_ident | NO | 90 | - |
 flag_checkM_complete | NO | 98 | - |
 fail_checkM_complete | NO | 95 | - |
 flag_checkM_contamination | NO | 2 | - |
