@@ -68,7 +68,7 @@
                 "assembler": {
                     "type": "string",
                     "default": "shovill",
-                    "description": "Assembler to use either shovill(default) or spades",
+                    "description": "Assembler to use either shovill(default) or spades or skesa",
                     "fa_icon": "fas fa-file-csv"
                 },
                 "preset": {

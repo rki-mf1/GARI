@@ -1,16 +1,15 @@
 {
         "default": {
                 "flag_max_total_contigs": 500,
-                "flag_min_BUSCO_S": 98,
-                "fail_min_BUSCO_S": 95,
+                "flag_min_BUSCO_S": 95,
+                "fail_min_BUSCO_S": 90,
                 "flag_max_BUSCO_D": 1,
-                "fail_max_BUSCO_D": 2,
+                "fail_max_BUSCO_D": 5,
                 "flag_AvgCov": 50,
                 "fail_AvgCov": 30,
                 "flag_PercMapped": 98,
                 "fail_PercMapped": 90,
-                "flag_ref_ident": 98,
-                "fail_ref_ident": 95,
+                "flag_ref_ident": 90,
 
                 "flag_krakenTarget": 60,
                 "flag_krakenHost": 5,
