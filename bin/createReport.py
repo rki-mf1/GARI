@@ -267,8 +267,6 @@ def checkThresholds(QCHash, refSpecies, thresh_Hash):
     if QCHash["assembly"]["reference_identity"] <= float(thresh_Hash["flag_ref_ident"]):
       flagged = True
       errorList.append("reference_identity")
-      if QCHash["assembly"]["reference_identity"] <= float(thresh_Hash["fail_ref_ident"]):
-        error = True
 
   if args.ck == "true": # only classify kraken2 output if enabled
     # 10. Kraken2 - target
@@ -309,9 +307,9 @@ def checkThresholds(QCHash, refSpecies, thresh_Hash):
         error = True
 
 # Total QC warnings allowed before automatical FAIL
-  if len(errorList) > maxFlagsAllowed:
-    error = True
-    errorList.append("too_many_flags")
+#  if len(errorList) > maxFlagsAllowed:
+#    error = True
+#    errorList.append("too_many_flags")
 
   classification = "PASSED"
   if error:

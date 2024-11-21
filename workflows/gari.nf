@@ -36,6 +36,7 @@ WorkflowGari.initialise(params, log)
 include { DOWNLOAD_KRAKENDB } from '../modules/local/downloadKrakenDB.nf'
 include { REF_LENGTHS } from '../modules/local/refLengths'
 include { FASTANI } from '../modules/local/fastANI'
+include { SKESA } from '../modules/local/skesa'
 include { STAT_SUMMARY } from '../modules/local/createMetaReport'
 include { STAT_SUMMARY_QC } from '../modules/local/createMetaReport_QC'
 include { BBMAP_ALIGN } from '../modules/local/bbmap_cov'
@@ -124,7 +125,21 @@ workflow GARI {
         // modify input stream for spades e.g. add empty fields for pb and ont
         fastp_adjust = FASTP.out.reads.map { meta, fastq -> [ meta, fastq, [], [] ] }
         
-        if (params.assembler=="spades") {
+        if (params.assembler=="shovill") {
+            SHOVILL (
+                FASTP.out.reads
+            )
+            ch_versions = ch_versions.mix(SHOVILL.out.versions)
+            asm_tmp = SHOVILL.out.contigs
+        }
+        else if (params.assembler=="skesa"){
+            SKESA (
+                FASTP.out.reads
+            )
+            ch_versions = ch_versions.mix(SKESA.out.versions)
+            asm_tmp = SKESA.out.contigs
+        }
+        else {
             SPADES (
                 fastp_adjust, 
                 [], 
@@ -132,13 +147,6 @@ workflow GARI {
             )
             ch_versions = ch_versions.mix(SPADES.out.versions)
             asm_tmp = SPADES.out.scaffolds
-        }
-        else {
-            SHOVILL (
-                FASTP.out.reads
-            )
-            ch_versions = ch_versions.mix(SHOVILL.out.versions)
-            asm_tmp = SHOVILL.out.contigs
         }
         BBMAP_RENAME (
             asm_tmp,

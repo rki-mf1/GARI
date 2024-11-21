@@ -78,7 +78,7 @@ When executing the pipeline on a HPC with a queuing system you might want to lim
 | tmp_dir | NO | path to temp directory (used for some processes) | string | /tmp/ |
 | qc_mode | NO | if set to true expects assemblies as input and only performs QC | boolean | false |
 | preset | NO | predefined preset settings to use (more details below) | string | |
-| assembler | NO | assembler to use (options: 'shovill' or 'spades')| string | 'shovill' |
+| assembler | NO | assembler to use (options: 'spades',  'shovill' or 'skesa')| string | 'spades' |
 | busco_lin | NO (but advised)| BUSCO lineage to use for assessment of genomic completeness | string | 'bacteria_odb10' |
 | busco_data | NO | path to local copy of BUSCO lineages datasets, if not set BUSCO downloads the lineages itself | string | |
 | checkm_db | NO | path to local copy of checkM database, if not set checkM downloads the database itself | string | |
@@ -87,6 +87,7 @@ When executing the pipeline on a HPC with a queuing system you might want to lim
 | krakenA_params | NO |  additional parameters to add to the KRAKEN2 command assessing assemblies | string | '--minimum-base-quality 10 --minimum-hit-groups 3 --confidence 0.05' |
 | spades_params | NO |  additional parameters to add to the SPADES command | string | '--isolate' |
 | shovill_params | NO |  additional parameters to add to the SHOVILL command | string | |
+| skesa_params | NO |  additional parameters to add to the SKESA command | string | |
 | busco_params | NO |  additional parameters to add to the BUSCO command | string | '--mode genome'  |
 | publish_dir_enabled | NO |---| boolean | false |
 | publish_dir_mode | NO |---| string | 'copy' |
