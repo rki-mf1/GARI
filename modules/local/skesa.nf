@@ -33,7 +33,7 @@ process SKESA {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        skesa: \$(skesa --version 2>&1 | sed 's/^SKESA //; s/ .*\$//' | cut -d" " -f3)
+        skesa: 2.5.1
     END_VERSIONS
     """
 }
