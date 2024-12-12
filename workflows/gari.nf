@@ -227,7 +227,10 @@ workflow GARI {
         )
         ch_versions = ch_versions.mix(STAT_SUMMARY.out.versions)
 
-        CREATE_REPORT(STAT_SUMMARY.out.json.collect())
+        CREATE_REPORT (
+            STAT_SUMMARY.out.json.collect(),
+            params.outdir
+        )
     }
     else {
         // needs to be set to single_end since the assemblies are parsed as single_end
@@ -247,7 +250,10 @@ workflow GARI {
         )
         ch_versions = ch_versions.mix(STAT_SUMMARY_QC.out.versions)        
 
-        CREATE_REPORT(STAT_SUMMARY_QC.out.json.collect())
+        CREATE_REPORT(
+            STAT_SUMMARY_QC.out.json.collect(), 
+            params.outdir
+        )
     }
 
     CUSTOM_DUMPSOFTWAREVERSIONS (

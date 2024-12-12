@@ -119,6 +119,12 @@
                     "description": "Parameters to use for shovill",
                     "fa_icon": "fas fa-file-csv"
                 },
+                "skesa_params": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Parameters to use for shovill",
+                    "fa_icon": "fas fa-file-csv"
+                },
                 "busco_params": {
                     "type": "string",
                     "default": "--mode genome",

@@ -10,10 +10,13 @@ import pandas as pd
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Summarizes a set of json files for QC parameters")
     parser.add_argument("--g", "-gariOut", type=str, help="GARI output directory with folder per sample")
+    parser.add_argument("--p", "-prefix", type=str, help="prefix for table output")
     args = parser.parse_args()
 
-    timeStamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-    outfile = "GARI_QC_report_" + timeStamp + ".csv"
+    #timeStamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    #outfile = "GARI_QC_report_" + timeStamp + ".csv"
+    outprefix = args.p.split("/")[-1]
+    outfile = outprefix + "_QC_report.csv"
 
     json_list = []
 

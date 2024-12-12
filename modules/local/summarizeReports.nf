@@ -8,6 +8,7 @@ process CREATE_REPORT {
 
     input:
       file ('*')
+      path outdir
 
     output:
       path '*.csv'
@@ -16,7 +17,8 @@ process CREATE_REPORT {
     script:
     """
     summarizeReports.py \\
-        --g .
+        --g . \\
+        --p $outdir
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
