@@ -46,12 +46,19 @@ The pipeline comprises the following steps/modules:
 > to set-up Nextflow. Make sure to [test your setup](https://nf-co.re/docs/usage/introduction#how-to-run-a-pipeline)
 > with `-profile test` before running the workflow on actual data. (NOT SETUP YET...)
 
-
-Now, you can run the pipeline using:
+Now, you can install the pipeline using:
 
 ```bash
-nextflow run /path/to/gari -profile <singularity, docker, conda, mamba> -params-file params.yaml
+# get the most recent pipeline version (the same command updates the pipeline)
+nextflow pull rki-mf1/GARI
+# check the available release versions and development branches
+nextflow info rki-mf1/GARI
+# select a recent release and run
+nextflow run rki-mf1/GARI -r 0.0.1 -profile <singularity, docker, conda, mamba> -params-file params.yaml
 ```
+
+Another option is to clone the repository and run the pipeline but we recommend using the `nextflow pull` option and stablese release versions via `-r`. 
+
 The pipeline needs a few input parameters to be defined. This can be done either directly in the command line, or via a parameter file (params.yaml as in the command above). Using a params file is advised. Here is a minimum example of a params file with the required parameters:
 
 `params.yaml`:
