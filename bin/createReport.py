@@ -69,10 +69,10 @@ def parseBUSCO(buscoPath):
     data = json.load(f)
     
     BUSCO = data['results']['one_line_summary']
-    BUSCO_S = data['results']['Single copy']
-    BUSCO_D = data['results']['Multi copy']
-    BUSCO_F = data['results']['Fragmented']
-    BUSCO_M = data['results']['Missing']
+    BUSCO_S = data['results']['Single copy percentage']
+    BUSCO_D = data['results']['Multi copy percentage']
+    BUSCO_F = data['results']['Fragmented percentage']
+    BUSCO_M = data['results']['Missing percentage']
 
   return([BUSCO, BUSCO_S, BUSCO_D, BUSCO_F, BUSCO_M])
 

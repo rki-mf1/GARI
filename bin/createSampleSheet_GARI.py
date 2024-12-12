@@ -10,8 +10,8 @@ def parseMetadata(metaPath):
   metaHash={}
   
   for i,row in meta.iterrows():
-    combName = row["CUSTOMER_SAMPLE_ID"] + "_" + row["SEQUENCED_SAMPLE_ID"]
-    metaHash[combName] = row["SPECIES"]
+    combName = row["CUSTOMER_SAMPLE_ID"] + "___" + row["SEQUENCED_SAMPLE_ID"]
+    metaHash[combName] = (row["SPECIES"], row["RUN_ID"])
   
   return(metaHash)
 
@@ -37,9 +37,11 @@ for file in os.listdir(args.d):
             if file2.endswith(".fastq.gz") or file2.endswith(".fq.gz"):
                 if "R1" in file2:
                     file2_r2 = file2.replace("R1", "R2")
-                    sID = file2.split(args.s)[2]+"_"+file2.split(args.s)[1]
+                    sID = file2.split(args.s)[2]+"___"+file2.split(args.s)[1]
                     if args.m:
-                      metaSpecies = mHash[sID]
+                      metaSpecies = mHash[sID][0]
+                      metaRun = mHash[sID][1]
+                      sID=sID+"___"+metaRun
                     else:
                       metaSpecies = "NA"
                     fPath=args.d + "/" + file
@@ -48,7 +50,7 @@ for file in os.listdir(args.d):
     if file.endswith(".fastq.gz") or file.endswith(".fq.gz"):
         if "R1" in file:
             file_r2 = file.replace("R1", "R2")
-            sID = file.split(args.s)[2]+"_"+file.split(args.s)[1]
+            sID = file.split(args.s)[2]+"___"+file.split(args.s)[1]
             if args.m:
               metaSpecies = mHash[sID]
             else:
