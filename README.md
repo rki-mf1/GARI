@@ -47,11 +47,20 @@ The pipeline comprises the following steps/modules:
 > with `-profile test` before running the workflow on actual data. (NOT SETUP YET...)
 
 
-Now, you can run the pipeline using:
+Now, you can install the pipeline using:
 
 ```bash
-nextflow run /path/to/gari -profile <singularity, docker, conda, mamba> -params-file params.yaml
+# get the most recent pipeline version (the same command updates the pipeline)
+nextflow pull rki-mf1/GARI
+# check the available release versions and development branches
+nextflow info rki-mf1/GARI
+# select a recent release and run
+nextflow run rki-mf1/GARI -r 1.0.0 -profile <singularity, docker, conda, mamba> -params-file params.yaml
 ```
+
+Another option is to clone the repository and run the pipeline but we recommend using the `nextflow pull` option and stablese release versions via `-r`. 
+
+
 The pipeline needs a few input parameters to be defined. This can be done either directly in the command line, or via a parameter file (params.yaml as in the command above). Using a params file is advised. Here is a minimum example of a params file with the required parameters:
 
 `params.yaml`:
@@ -82,6 +91,7 @@ When executing the pipeline on a HPC with a queuing system you might want to lim
 | busco_lin | NO (but advised)| BUSCO lineage to use for assessment of genomic completeness | string | 'bacteria_odb10' |
 | busco_data | NO | path to local copy of BUSCO lineages datasets, if not set BUSCO downloads the lineages itself | string | |
 | checkm_db | NO | path to local copy of checkM database, if not set checkM downloads the database itself | string | |
+| minSize | NO | minimum contig size to filter out/remove | integer | 200 |
 | fastp_params | NO | additional parameters to add to the FASTP command | string | '--detect_adapter_for_pe' |
 | krakenR_params | NO |  additional parameters to add to the KRAKEN2 command assessing reads | string | '--minimum-base-quality 10 --minimum-hit-groups 3 --confidence 0.05' |
 | krakenA_params | NO |  additional parameters to add to the KRAKEN2 command assessing assemblies | string | '--minimum-base-quality 10 --minimum-hit-groups 3 --confidence 0.05' |
