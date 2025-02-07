@@ -150,7 +150,8 @@ workflow GARI {
         }
         BBMAP_RENAME (
             asm_tmp,
-            params.preset
+            params.preset,
+            params.minSize
         )
         ch_versions = ch_versions.mix(BBMAP_RENAME.out.versions)
 
@@ -164,7 +165,12 @@ workflow GARI {
         )    
         ch_versions = ch_versions.mix(BBMAP_ALIGN.out.versions)
     } else {
-        asm = INPUT_CHECK.out.reads
+        BBMAP_RENAME (
+            INPUT_CHECK.out.reads,
+            params.preset,
+            params.minSize
+        )
+        asm = BBMAP_RENAME.out.rename
         asm_adjust = INPUT_CHECK.out.reads.map {[ [id: it[0].id + '-ASM', single_end:true, species: it[0].species], it[1] ] }
         asm_adjust2 = INPUT_CHECK.out.reads.map {[ [id: it[0].id, single_end: it[0].single_end, species: it[0].species, batch_input:true], it[1] ] }
     }
