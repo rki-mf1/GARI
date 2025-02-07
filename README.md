@@ -17,8 +17,8 @@ The pipeline comprises the following steps/modules:
     - [Kraken2](https://github.com/DerrickWood/kraken2) to check for contamination
 2. Genome Assembly/Reconstruction
 	- [shovill](https://github.com/tseemann/shovill)(default) / [spades](https://github.com/ablab/spades)
-    - [bbmap](https://jgi.doe.gov/data-and-tools/software-tools/bbtools/) to rename contigs and remove contigs < 200bp
 3. Assembly QC
+	- [bbmap](https://jgi.doe.gov/data-and-tools/software-tools/bbtools/) to rename contigs and remove contigs < 200bp (default value)
 	- [assembly-scan](https://github.com/rpetit3/assembly-scan) to produce general assembly statistics
     - [bbmap](https://jgi.doe.gov/data-and-tools/software-tools/bbtools/) to remap the reads to the assembly and calculate coverage, etc.
     - [Kraken2](https://github.com/DerrickWood/kraken2) to check for contamination
