@@ -2,10 +2,10 @@ process SHOVILL {
     tag "$meta.id"
     label 'process_medium'
 
-    conda "bioconda::shovill=1.1.0"
+    conda "bioconda::shovill==1.1.0=hdfd78af_1"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/shovill:1.1.0--0' :
-        'biocontainers/shovill:1.1.0--0' }"
+    'https://depot.galaxyproject.org/singularity/shovill:1.1.0--hdfd78af_1' :
+    'biocontainers/shovill:1.1.0--hdfd78af_1'}"
 
     input:
     tuple val(meta), path(reads)

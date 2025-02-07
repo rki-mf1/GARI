@@ -36,8 +36,8 @@
                     "type": "string",
                     "format": "file-path",
                     "exists": true,
-                    "description": "A tab separted 2 column list of references that will be used to identify the closest related genome for each species.",
-                    "help_text": "A tab separted 2 column list of references tahtw ill be used to identify the closest related genome for each species. Col1 = Path to fasta; Col2 = Reference name used for species comparison",
+                    "description": "A tab separated 2 column list of references that will be used to identify the closest related genome for each species.",
+                    "help_text": "A tab separated 2 column list of references taht will be used to identify the closest related genome for each species. Col1 = Path to fasta; Col2 = Reference name used for species comparison",
                     "fa_icon": "fas fa-file-csv"
                 },
                 "kraken_db": {
@@ -69,6 +69,12 @@
                     "type": "string",
                     "default": "shovill",
                     "description": "Assembler to use either shovill(default) or spades or skesa",
+                    "fa_icon": "fas fa-file-csv"
+                },
+                "minSize": {
+                    "type": "integer",
+                    "default": "200",
+                    "description": "Minimum size to filter out contigs using BBMAP",
                     "fa_icon": "fas fa-file-csv"
                 },
                 "preset": {

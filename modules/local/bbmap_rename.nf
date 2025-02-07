@@ -9,7 +9,8 @@ process BBMAP_RENAME {
 
     input:
     tuple val(meta), path(asm)
-    val pref 
+    val pref
+    val minSize 
 
     output:
     tuple val(meta), path("${meta.id}.fasta"), emit: rename
@@ -23,7 +24,7 @@ process BBMAP_RENAME {
     def prefix = pref ? "${pref}_${meta.id}_node_" : "${meta.id}_node_"
 
     """
-    bbrename.sh in=$asm out=${meta.id}.fasta prefix=${prefix} minscaf=200
+    bbrename.sh in=$asm out=${meta.id}.fasta prefix=${prefix} minscaf=${minSize}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
