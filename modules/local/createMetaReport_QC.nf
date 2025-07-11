@@ -7,10 +7,10 @@ process STAT_SUMMARY_QC {
         'biocontainers/python:3.8.3' }"
 
     input:
-      tuple val(meta), file(ASM), file(BUSCO), file(FASTANI), file(STATS), file(KRAKEN_ASM), file(CHECKM)
-      file(refLens)
+      tuple val(meta), file(ASM), file(SKANI), file(STATS), file(KRAKEN_ASM), file(CHECKM)
       file(thresholds)
       path(krakenDB)
+      path(skaniDB)
 
     output:
       tuple val(meta), path("./${meta.id}_QC.json"), emit: json
@@ -19,19 +19,16 @@ process STAT_SUMMARY_QC {
     script:
     """
     createReport.py \\
-      --b $BUSCO \\
       --cm $CHECKM \\
-      --f $FASTANI \\
+      --sk $SKANI \\
       --s $STATS \\
       --ka $KRAKEN_ASM \\
-      --r ${refLens} \\
       --o ${meta.id}_QC.json \\
       --sp "${meta.species}" \\
       --gv ${workflow.manifest.version} \\
       --ga "NA" \\
-      --gfDB ${params.reference} \\
-      --gbDB ${params.busco_lin} \\
       --gkDB ${krakenDB} \\
+      --skDB ${skaniDB} \\
       --th ${thresholds} \\
       --ck ${params.classify_kraken}
 

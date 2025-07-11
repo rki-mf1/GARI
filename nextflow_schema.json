@@ -13,7 +13,7 @@
             "required": [
                 "input",
                 "outdir",
-                "reference"
+                "skani_db"
             ],
             "properties": {
                 "input": {
@@ -32,26 +32,17 @@
                     "description": "The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure.",
                     "fa_icon": "fas fa-folder-open"
                 },
-                "reference": {
-                    "type": "string",
-                    "format": "file-path",
-                    "exists": true,
-                    "description": "A tab separated 2 column list of references that will be used to identify the closest related genome for each species.",
-                    "help_text": "A tab separated 2 column list of references taht will be used to identify the closest related genome for each species. Col1 = Path to fasta; Col2 = Reference name used for species comparison",
-                    "fa_icon": "fas fa-file-csv"
-                },
                 "kraken_db": {
                     "type": "string",
                     "format": "directory-path",
                     "description": "Path to a kraken2 database used in for taxonomical assignment.",
                     "fa_icon": "fas fa-folder-open"
                 },
-                "busco_lin": {
+                "skani_db": {
                     "type": "string",
-                    "default": "bacteria_odb10",
-                    "format": "file-path",
-                    "description": "BUSCO lineage to use.",
-                    "fa_icon": "fas fa-file-csv"
+                    "format": "directory-path",
+                    "description": "Path to a skani database used in for taxonomical assignment.",
+                    "fa_icon": "fas fa-folder-open"
                 },
                 "checkm_db": {
                     "type": "string",
@@ -59,19 +50,13 @@
                     "description": "Path to checkm database set up. If not set it will download it in every iteration.",
                     "fa_icon": "fas fa-folder-open"
                 },
-                "busco_data": {
-                    "type": "string",
-                    "format": "directory-path",
-                    "description": "Path to local copy of BUSCO lineage datasets if not set busco will download the required lineages automatically",
-                    "fa_icon": "fas fa-file-csv"
-                },
                 "assembler": {
                     "type": "string",
-                    "default": "shovill",
-                    "description": "Assembler to use either shovill(default) or spades or skesa",
+                    "default": "spades",
+                    "description": "Assembler to use either spades(default), shovill or skesa",
                     "fa_icon": "fas fa-file-csv"
                 },
-                "minSize": {
+                "min_size": {
                     "type": "integer",
                     "default": "200",
                     "description": "Minimum size to filter out contigs using BBMAP",
@@ -99,6 +84,12 @@
                     "type": "string",
                     "default": "--detect_adapter_for_pe",
                     "description": "Parameters to use for FASTP",
+                    "fa_icon": "fas fa-file-csv"
+                },
+                "assemblyscan_params": {
+                    "type": "string",
+                    "default": "--json",
+                    "description": "Parameters to use for assembly-scan. Note --json is vital here for the QC assessment to work.",
                     "fa_icon": "fas fa-file-csv"
                 },
                 "krakenR_params": {
@@ -129,12 +120,6 @@
                     "type": "string",
                     "default": "",
                     "description": "Parameters to use for shovill",
-                    "fa_icon": "fas fa-file-csv"
-                },
-                "busco_params": {
-                    "type": "string",
-                    "default": "--mode genome",
-                    "description": "Parameters to use for BUSCO",
                     "fa_icon": "fas fa-file-csv"
                 },
                 "thresholds": {

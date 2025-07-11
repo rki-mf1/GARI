@@ -16,15 +16,6 @@ def parseThresholds(inPath, species):
   return t_hash
 
 
-def parseRefLens(inPath):
-  refLens = {}
-  with open(inPath, 'rt') as f:
-    for line in f:
-      splitted = line.rstrip().split("\t")
-      refLens[splitted[0]] = [int(splitted[1]), float(splitted[2])]  
-  return(refLens)
-
-
 def parseFASTP(fastpPath):
   dataHash={} 
 
@@ -62,21 +53,6 @@ def fakeFASTP():
 
   return(dataHash)
 
-
-def parseBUSCO(buscoPath):
-
-  with open(buscoPath, 'rt') as f:
-    data = json.load(f)
-    
-    BUSCO = data['results']['one_line_summary']
-    BUSCO_S = data['results']['Single copy percentage']
-    BUSCO_D = data['results']['Multi copy percentage']
-    BUSCO_F = data['results']['Fragmented percentage']
-    BUSCO_M = data['results']['Missing percentage']
-
-  return([BUSCO, BUSCO_S, BUSCO_D, BUSCO_F, BUSCO_M])
-
-
 def parseCheckM(checkM_Path):
   with open(checkM_Path, 'rt') as f:
     header = f.readline()
@@ -89,21 +65,26 @@ def parseCheckM(checkM_Path):
 
   return([marker_lin, completeness, contamin, heterogenity])
 
+def parseSKANI(skaniPath):
 
-def parseFASTANI(fastaniPath):
-
-  with open(fastaniPath, 'rt') as f:
+  with open(skaniPath, 'rt') as f:
+    header = f.readline() # checking first line in enough since ordered by ident
     data = f.readline() # checking first line in enough since ordered by ident
     if data == "": # case for empty fastANI output
       ident = 'NA'
-      ref = 'NA'
-      aniCov = 'NA'
+      ref_file = 'NA'
+      ref_name = 'NA'
+      aniCov_ref = 'NA'
+      aniCov_query = 'NA'
     else:
-      ident = round(float(data.rstrip().split("\t")[2]), 2)
-      ref = data.rstrip().split("\t")[1].split("/")[-1]
-      aniCov = round(int(data.rstrip().split("\t")[3]) / int(data.rstrip().split("\t")[4]), 2)
+      ident = float(data.rstrip().split("\t")[2])
+      ref_file = data.rstrip().split("\t")[0].split("/")[-1]
+      ref_name = data.rstrip().split("\t")[5]
+      aniCov_ref = float(data.rstrip().split("\t")[3])
+      aniCov_query = float(data.rstrip().split("\t")[4])
 
-  return(ref, ident, aniCov)
+  return(ref_file, ref_name, ident, aniCov_ref, aniCov_query)
+
 
 
 def parseAssemblyScan(statsPath):
@@ -164,32 +145,13 @@ def parseCoverage(covPath):
   return(avgCov, percMapped)
 
 
-def parseRefList(refPath, refID):
-  refName = "NA"
-  refSp = "NA"
-
-  with open(refPath, "rt") as f:
-    for line in f:
-      splitted = line.rstrip().split("\t")
-      rPath = splitted[0]
-      rName = splitted[1]
-      
-      if rPath.split("/")[-1] == refID:
-        refName = rName
-        break
-  if not refName == "NA":
-    refSp = refName.split(" ")[0] + " " + refName.split(" ")[1]
-
-  return(refName, refSp)
-
-
 # function to check the QC values
 def checkThresholds(QCHash, refSpecies, thresh_Hash):
 
   t_expected_species = args.sp
 
   # max flags allowed --> more than x flags = FAILED classification
-  maxFlagsAllowed = 3
+  #maxFlagsAllowed = 3
 
   print("thresholds used:")
   print(thresh_Hash)
@@ -204,51 +166,36 @@ def checkThresholds(QCHash, refSpecies, thresh_Hash):
     flagged = True
     errorList.append("Fragmented")
 
-  # 2. BUSCO SingleCopy 
-  if QCHash["assembly"]["BUSCO_single_copy"] < float(thresh_Hash["flag_min_BUSCO_S"]):
-    errorList.append("BUSCO_single_copy") 
-    flagged = True
-    if QCHash["assembly"]["BUSCO_single_copy"] < float(thresh_Hash["fail_min_BUSCO_S"]):
-      error = True
-    
-
-  # 3. BUSCO Duplicates 
-  if QCHash["assembly"]["BUSCO_duplicated"] >= float(thresh_Hash["flag_max_BUSCO_D"]):
-    flagged = True
-    errorList.append("BUSCO_duplicated") 
-    if QCHash["assembly"]["BUSCO_duplicated"] >= float(thresh_Hash["fail_max_BUSCO_D"]):
-      error = True    
-  
-  # 4. CheckM completeness
+  # 2. CheckM completeness
     if QCHash["assembly"]["CheckM_completeness"] < float(thresh_Hash["flag_checkM_complete"]):
       errorList.append("CheckM_completeness") 
       flagged = True
       if QCHash["assembly"]["CheckM_completeness"] < float(thresh_Hash["fail_checkM_complete"]):
         error = True
         
-  # 5. CheckM contamination
+  # 3. CheckM contamination
   if QCHash["assembly"]["CheckM_contamination"] >= float(thresh_Hash["flag_checkM_contamination"]):
     flagged = True
     errorList.append("CheckM_contamination") 
     if QCHash["assembly"]["CheckM_contamination"] >= float(thresh_Hash["fail_checkM_contamination"]):
       error = True
 
-  # 6. Avg. Cov 
+  # 4. Avg. Cov 
   if args.c and QCHash["assembly"]["average_coverage"] < float(thresh_Hash["flag_AvgCov"]):
     flagged = True
     errorList.append("average_coverage")
     if QCHash["assembly"]["average_coverage"] < float(thresh_Hash["fail_AvgCov"]):
       error = True    
 
-  # 7. Perc. Mapped back to ASM
+  # 5. Perc. Mapped back to ASM
   if args.c and QCHash["assembly"]["percent_reads_mapped"] <= float(thresh_Hash["flag_PercMapped"]):
     flagged = True
     errorList.append("percent_reads_mapped")
     if args.c and QCHash["assembly"]["percent_reads_mapped"] <= float(thresh_Hash["fail_PercMapped"]):
       error = True    
 
-  # 8. No reference found == NA
-  if QCHash["assembly"]["reference_file"] == 'NA':
+  # 6. No reference found == NA
+  if QCHash["assembly"]["skani_ref_file"] == 'NA':
     error = True
     errorList.append("no_reference")
   else: # check reference values only if there is a ref
@@ -263,10 +210,10 @@ def checkThresholds(QCHash, refSpecies, thresh_Hash):
           error = True
           errorList.append("wrong_reference")
   
-  # 9. ref identity 
-    if QCHash["assembly"]["reference_identity"] <= float(thresh_Hash["flag_ref_ident"]):
+  # 7. ref identity 
+    if QCHash["assembly"]["skani_ref_identity"] <= float(thresh_Hash["flag_ref_ident"]):
       flagged = True
-      errorList.append("reference_identity")
+      errorList.append("skani_ref_identity")
 
   if args.ck == "true": # only classify kraken2 output if enabled
     # 10. Kraken2 - target
@@ -328,21 +275,18 @@ if __name__ == '__main__':
   import json
 
   parser = argparse.ArgumentParser(description="Create summary report of GR workflow")
-  parser.add_argument("--b", "-busco", type=str, required=True, help="BUSCO report in json format")
   parser.add_argument("--cm", "-checkM", type=str, required=False, help="CheckM tsv report")
-  parser.add_argument("--f", "-fastani", type=str, required=True, help="fastANI output")
+  parser.add_argument("--sk", "-skani", type=str, required=True, help="fastANI output")
   parser.add_argument("--s", "-stats", type=str, required=True, help="stats output")
   parser.add_argument("--kr", "-krakenread", type=str, required=False, help="kraken report for reads")
   parser.add_argument("--ka", "-krakenasm", type=str, required=True, help="kraken report for assembly")
-  parser.add_argument("--r", "-refLen", type=str, required=True, help="refLen file created by GARI")
   parser.add_argument("--p", "-fastp", type=str, required=False, help="fastp output")
   parser.add_argument("--c", "-cov", type=str, required=False, help="coverage log file of bbmap")
   parser.add_argument("--sp", "-species", type=str, required=False, help="expected species to compare to identified reference")
   parser.add_argument("--gv", "-gariVersion", type=str, required=False, help="GARI version")
   parser.add_argument("--ga", "-gariAssembler", type=str, required=False, help="assembler used in GARI")
-  parser.add_argument("--gfDB", "-gariFastaniDB", type=str, required=False, help="GARI fastANI reflist used")
-  parser.add_argument("--gbDB", "-gariBuscoLin", type=str, required=False, help="GARI BUSCO lineage used")
   parser.add_argument("--gkDB", "-gariKrakenDB", type=str, required=False, help="GARI Kraken DB used")
+  parser.add_argument("--skDB", "-skaniDB", type=str, required=False, help="GARI Skani DB used")
   parser.add_argument("--th", "-thresholds", type=str, required=False, help="thresholds file in json format")
   parser.add_argument("--o", "-out", type=str, required=True, help="summary file in json format")
   parser.add_argument("--ck", "-classifyKraken", type=str, required=True, help="if enabled will check if enough reads/contigs have been assigned to the correct phylogentic groups")
@@ -353,27 +297,18 @@ if __name__ == '__main__':
 
   thresholds = parseThresholds(args.th, args.sp)
 
-  refHash = parseRefLens(args.r)
-
-  sampleID = args.f.split("_T")[0]
+  sampleID = args.sk.split("_skani.")[0]
   dataHash["sample_ID"] = sampleID
   dataHash["expected_species"] = args.sp
   dataHash["pipeline"] = {}
   dataHash["pipeline"]["GARI_version"] = args.gv
   dataHash["pipeline"]["assembler"] = args.ga
-  dataHash["pipeline"]["FastANI_DB"] = args.gfDB.split("/")[-1]
-  dataHash["pipeline"]["BUSCO_lineage"] = args.gbDB
+  dataHash["pipeline"]["Skani_DB"] = args.skDB.split("/")[-1]
   dataHash["pipeline"]["Kraken2_DB"] = args.gkDB.split("/")[-1]
   dataHash["pipeline"]["Kraken2_target_NCBI_tax_ID"] = thresholds["kraken2_targetID"]
   dataHash["pipeline"]["Kraken2_host_NCBI_tax_ID"] = thresholds["kraken2_hostID"]
 
   dataHash["assembly"] = parseAssemblyScan(args.s)
-  BUSCOs = parseBUSCO(args.b)
-  dataHash["assembly"]["BUSCO"] = BUSCOs[0]
-  dataHash["assembly"]["BUSCO_single_copy"] = BUSCOs[1]
-  dataHash["assembly"]["BUSCO_duplicated"] = BUSCOs[2]
-  dataHash["assembly"]["BUSCO_fragmented"] = BUSCOs[3]
-  dataHash["assembly"]["BUSCO_missing"] = BUSCOs[4]
 
   if args.cm:
     checkM_results = parseCheckM(args.cm)
@@ -382,10 +317,13 @@ if __name__ == '__main__':
     dataHash["assembly"]["CheckM_contamination"] = checkM_results[2]
     dataHash["assembly"]["CheckM_strain_heterogeneity"] = checkM_results[3]
 
-  ref, refIdent, refCov = parseFASTANI(args.f)
-  dataHash["assembly"]["reference_file"] = ref
-  dataHash["assembly"]["reference_identity"] = refIdent
-  dataHash["assembly"]["reference_coverage"] = refCov
+  ref_file, ref_name, ref_ident, aniCov_ref, aniCov_query = parseSKANI(args.sk)
+  dataHash["assembly"]["skani_ref_file"] = ref_file
+  dataHash["assembly"]["skani_ref_taxon"] = ref_name
+  dataHash["assembly"]["skani_ref_species"] = ref_name.split(" ")[1] + " " + ref_name.split(" ")[2]
+  dataHash["assembly"]["skani_ref_identity"] = ref_ident
+  dataHash["assembly"]["skani_cov_ref"] = aniCov_ref
+  dataHash["assembly"]["skani_cov_asm"] = aniCov_query
 
   if args.p:
     dataHash["reads"] = parseFASTP(args.p)
@@ -405,30 +343,8 @@ if __name__ == '__main__':
     dataHash["Kraken2"]["reads_Kraken2_host"] = 'NA'
     dataHash["Kraken2"]["reads_Kraken2_unclassified"] = 'NA'
 
-
   #####################################################################################
-  # 1) ASM LEN
-  asmLen = int(dataHash["assembly"]["assembly_length"])
-  if not dataHash["assembly"]["reference_file"] == 'NA':
-    refLen = refHash[dataHash["assembly"]["reference_file"]][0]
-    lenRatio = round(asmLen / refLen * 100, 2)
-  else:
-    lenRatio='NA'
-  dataHash["assembly"]["reference_length_ratio"] = lenRatio
-
-  #####################################################################################
-  # 2) ASM GC
-  asmGC = dataHash["assembly"]["percent_GC"]
-  if not dataHash["assembly"]["reference_file"] == 'NA':
-    refGC = refHash[dataHash["assembly"]["reference_file"]][1]*100 # multiply by 100 to make it comparable
-    GCDiff = round(refGC - asmGC, 2)
-  else:
-    GCDiff = 'NA'
-
-  dataHash["assembly"]["reference_GC_diff"] = GCDiff
-
-  #####################################################################################
-  # 3) Coverage and percentage mapped reads
+  # 1) Coverage and percentage mapped reads
   if args.c:
     avgCov, percMapped = parseCoverage(args.c)
     dataHash["assembly"]["average_coverage"] = avgCov
@@ -438,14 +354,8 @@ if __name__ == '__main__':
     dataHash["assembly"]["percent_reads_mapped"] = 'NA'
 
 ######################################################################################
-  # x) derive species name and taxID for the reference found with fastANI
-  refName, refSp = parseRefList(args.gfDB, dataHash["assembly"]["reference_file"])
-  dataHash["assembly"]["reference_taxon"] = refName
-  dataHash["assembly"]["reference_species"] = refSp
-
-######################################################################################
-  # 4) Check for threshold violations
-  qc_class, qc_errorList = checkThresholds(dataHash, refName, thresholds)
+  # 2) Check for threshold violations
+  qc_class, qc_errorList = checkThresholds(dataHash, ref_name, thresholds)
   
   dataHash["QC_status"] = qc_class
   dataHash["QC_warnings"] = "|".join(qc_errorList)

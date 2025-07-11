@@ -2,10 +2,10 @@ process KRAKEN2_KRAKEN2 {
     tag "$meta.id"
     label 'process_high'
 
-    conda "bioconda::kraken2=2.1.2 conda-forge::pigz=2.6"
+    conda "bioconda::kraken2=2.1.5--pl5321h077b44d_0"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/mulled-v2-5799ab18b5fc681e75923b2450abaa969907ec98:87fc08d11968d081f3e8a37131c1f1f6715b6542-0' :
-        'biocontainers/mulled-v2-5799ab18b5fc681e75923b2450abaa969907ec98:87fc08d11968d081f3e8a37131c1f1f6715b6542-0' }"
+        'https://depot.galaxyproject.org/singularity/kraken2:2.1.5--pl5321h077b44d_0 ' :
+        'biocontainers/kraken2:2.1.5--pl5321h077b44d_0' }"
 
     input:
     tuple val(meta), path(reads)
@@ -33,7 +33,7 @@ process KRAKEN2_KRAKEN2 {
     def classified_option = save_output_fastqs ? "--classified-out ${classified}" : ""
     def unclassified_option = save_output_fastqs ? "--unclassified-out ${unclassified}" : ""
     def readclassification_option = save_reads_assignment ? "--output ${prefix}.kraken2.classifiedreads.txt" : "--output /dev/null"
-    def compress_reads_command = save_output_fastqs ? "pigz -p $task.cpus *.fastq" : ""
+    def compress_reads_command = save_output_fastqs ? "gzip $task.cpus *.fastq" : ""
     def gzipped_input_option = is_gzipped ? "--gzip-compressed" : ""
 
     """
@@ -54,7 +54,6 @@ process KRAKEN2_KRAKEN2 {
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         kraken2: \$(echo \$(kraken2 --version 2>&1) | sed 's/^.*Kraken version //; s/ .*\$//')
-        pigz: \$( pigz --version 2>&1 | sed 's/pigz //g' )
     END_VERSIONS
     """
 }

@@ -4,8 +4,8 @@ process ASSEMBLYSCAN {
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/assembly-scan:0.4.1--pyhdfd78af_0' :
-        'biocontainers/assembly-scan:0.4.1--pyhdfd78af_0' }"
+        'https://depot.galaxyproject.org/singularity/assembly-scan:1.0.0--pyhdfd78af_0' :
+        'biocontainers/assembly-scan:1.0.0--pyhdfd78af_0' }"
 
     input:
     tuple val(meta), path(assembly)
@@ -21,7 +21,10 @@ process ASSEMBLYSCAN {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    assembly-scan $assembly > ${prefix}.json
+    assembly-scan \\
+        $assembly \\
+        $args \\
+        > ${prefix}.json
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
