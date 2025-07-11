@@ -13,9 +13,6 @@ class WorkflowGari {
     public static void initialise(params, log) {
 
 
-        if (!params.reference) {
-            Nextflow.error "Reference list not specified with e.g. '--reference ref_list.tsv' or via a detectable config file."
-        }
     }
 
     //

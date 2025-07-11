@@ -17,25 +17,12 @@ WorkflowGari.initialise(params, log)
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    CONFIG FILES
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*/
-
-// ch_multiqc_config          = Channel.fromPath("$projectDir/assets/multiqc_config.yml", checkIfExists: true)
-// ch_multiqc_custom_config   = params.multiqc_config ? Channel.fromPath( params.multiqc_config, checkIfExists: true ) : Channel.empty()
-// ch_multiqc_logo            = params.multiqc_logo   ? Channel.fromPath( params.multiqc_logo, checkIfExists: true ) : Channel.empty()
-// ch_multiqc_custom_methods_description = params.multiqc_methods_description ? file(params.multiqc_methods_description, checkIfExists: true) : file("$projectDir/assets/methods_description_template.yml", checkIfExists: true)
-
-/*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     IMPORT LOCAL MODULES/SUBWORKFLOWS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 // MODULES
 //
 include { DOWNLOAD_KRAKENDB } from '../modules/local/downloadKrakenDB.nf'
-include { REF_LENGTHS } from '../modules/local/refLengths'
-include { FASTANI } from '../modules/local/fastANI'
 include { SKESA } from '../modules/local/skesa'
 include { STAT_SUMMARY } from '../modules/local/createMetaReport'
 include { STAT_SUMMARY_QC } from '../modules/local/createMetaReport_QC'
@@ -64,8 +51,8 @@ include { KRAKEN2_KRAKEN2 as KRAKEN2_READ } from '../modules/nf-core/kraken2/kra
 include { KRAKEN2_KRAKEN2 as KRAKEN2_ASM } from '../modules/nf-core/kraken2/kraken2/main'
 include { SPADES } from '../modules/nf-core/spades/main'
 include { SHOVILL } from '../modules/nf-core/shovill/main'
-include { BUSCO } from '../modules/nf-core/busco/main'
 include { ASSEMBLYSCAN } from '../modules/nf-core/assemblyscan/main'
+include { SKANI_SEARCH } from '../modules/nf-core/skani/search/main'
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN MAIN WORKFLOW
@@ -96,13 +83,17 @@ workflow GARI {
         ch_kraken_db = params.kraken_db
     }
 
+    if (params.skani_db==null){
+        //placeholder for now
+        error "Error: no database for skani specified."
+    }
+    else{
+        ch_skani_db = params.skani_db
+    }
+
     // TODO: OPTIONAL, you can use nf-validation plugin to create an input channel from the samplesheet with Channel.fromSamplesheet("input")
     // See the documentation https://nextflow-io.github.io/nf-validation/samplesheets/fromSamplesheet/
     // ! There is currently no tooling to help you write a sample sheet schema
-
-    REF_LENGTHS (
-        params.reference
-    )
 
     if (params.qc_mode==false) {
         FASTP (
@@ -151,7 +142,7 @@ workflow GARI {
         BBMAP_RENAME (
             asm_tmp,
             params.preset,
-            params.minSize
+            params.min_size
         )
         ch_versions = ch_versions.mix(BBMAP_RENAME.out.versions)
 
@@ -168,7 +159,7 @@ workflow GARI {
         BBMAP_RENAME (
             INPUT_CHECK.out.reads,
             params.preset,
-            params.minSize
+            params.min_size
         )
         asm = BBMAP_RENAME.out.rename
         asm_adjust = INPUT_CHECK.out.reads.map {[ [id: it[0].id + '-ASM', single_end:true, species: it[0].species], it[1] ] }
@@ -189,20 +180,12 @@ workflow GARI {
     )
     ch_versions = ch_versions.mix(KRAKEN2_ASM.out.versions)
         
-    FASTANI (
-        asm_adjust2, 
-        REF_LENGTHS.out.refListfastANI
-    )
-    ch_versions = ch_versions.mix(FASTANI.out.versions)
 
-    BUSCO (
-        asm,    
-        params.busco_lin,
-        params.busco_data,
-        []
+    SKANI_SEARCH (
+        asm_adjust2,
+        params.skani_db
     )
-
-    ch_versions = ch_versions.mix(BUSCO.out.versions)
+    ch_versions = ch_versions.mix(SKANI_SEARCH.out.versions)
 
     CHECKM_LINEAGEWF (
         asm,
@@ -212,9 +195,7 @@ workflow GARI {
     ch_versions = ch_versions.mix(CHECKM_LINEAGEWF.out.versions)
 
     if (params.qc_mode==false) {
-
-        busco_ch = BUSCO.out.short_summaries_json.map{[ [id: it[0].id, single_end:false, species: it[0].species], it[1]] }
-        fastani_ch = FASTANI.out.ani.map{[ [id: it[0].id, single_end:false, species: it[0].species], it[1] ] }
+        skani_ch = SKANI_SEARCH.out.search.map{[ [id: it[0].id, single_end:false, species: it[0].species], it[1] ] }
         asmscan_ch = ASSEMBLYSCAN.out.json.map{[ [id: it[0].id, single_end:false, species: it[0].species], it[1]] }
         fastp_ch = FASTP.out.json.map{[ [id: it[0].id, single_end:false, species: it[0].species], it[1] ] }
         krakenR_ch = KRAKEN2_READ.out.report.map{[ [id: it[0].id, single_end:false, species: it[0].species], it[1]] }
@@ -222,14 +203,14 @@ workflow GARI {
         bbmap_ch = BBMAP_ALIGN.out.log.map{[ [id: it[0].id, single_end:false, species: it[0].species], it[1]] }
         checkm_ch = CHECKM_LINEAGEWF.out.checkm_tsv.map{[ [id: it[0].id, single_end:false, species: it[0].species], it[1]] }
 
-        concat_ch = asm.join(busco_ch).join(fastani_ch).join(asmscan_ch).join(fastp_ch).join(krakenR_ch).join(krakenA_ch).join(bbmap_ch).join(checkm_ch)
+        concat_ch = asm.join(skani_ch).join(asmscan_ch).join(fastp_ch).join(krakenR_ch).join(krakenA_ch).join(bbmap_ch).join(checkm_ch)
 
 
         STAT_SUMMARY (
             concat_ch,
-            REF_LENGTHS.out.table,
             threshold_file,
-            ch_kraken_db
+            ch_kraken_db,
+            ch_skani_db
         )
         ch_versions = ch_versions.mix(STAT_SUMMARY.out.versions)
 
@@ -240,19 +221,18 @@ workflow GARI {
     }
     else {
         // needs to be set to single_end since the assemblies are parsed as single_end
-        busco_ch = BUSCO.out.short_summaries_json.map{[ [id: it[0].id, single_end:true, species: it[0].species], it[1]] }
-        fastani_ch = FASTANI.out.ani.map{[ [id: it[0].id, single_end:true, species: it[0].species], it[1] ] }
+        skani_ch = SKANI_SEARCH.out.search.map{[ [id: it[0].id, single_end:true, species: it[0].species], it[1] ] }
         asmscan_ch = ASSEMBLYSCAN.out.json.map{[ [id: it[0].id, single_end:true, species: it[0].species], it[1]] }
         krakenA_ch = KRAKEN2_ASM.out.report.map{[ [id: it[0].id.minus("-ASM"), single_end:true, species: it[0].species], it[1]] }
         checkm_ch = CHECKM_LINEAGEWF.out.checkm_tsv.map{[ [id: it[0].id, single_end:true, species: it[0].species], it[1]] }
 
-        concat_ch = asm.join(busco_ch).join(fastani_ch).join(asmscan_ch).join(krakenA_ch).join(checkm_ch)
+        concat_ch = asm.join(skani_ch).join(asmscan_ch).join(krakenA_ch).join(checkm_ch)
 
         STAT_SUMMARY_QC (
             concat_ch,
-            REF_LENGTHS.out.table,
             threshold_file,
-            ch_kraken_db
+            ch_kraken_db,
+            ch_skani_db
         )
         ch_versions = ch_versions.mix(STAT_SUMMARY_QC.out.versions)        
 

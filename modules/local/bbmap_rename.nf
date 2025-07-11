@@ -8,7 +8,7 @@ process BBMAP_RENAME {
         'biocontainers/mulled-v2-008daec56b7aaf3f162d7866758142b9f889d690:e8a286b2e789c091bac0a57302cdc78aa0112353-0' }"
 
     input:
-    tuple val(meta), path(asm)
+    tuple val(meta), path(asm, stageAs: "input/*")
     val pref
     val minSize 
 

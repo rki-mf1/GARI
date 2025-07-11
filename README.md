@@ -14,17 +14,16 @@ Nextflow pipeline for the denovo genome reconstruction of bacterial pathogens.
 The pipeline comprises the following steps/modules:
 1. Read QC
 	- [fastp](https://github.com/OpenGene/fastp) to remove remaining adapters and perform very basic quality trimming
-    - [Kraken2](https://github.com/DerrickWood/kraken2) to check for contamination
+	- [Kraken2](https://github.com/DerrickWood/kraken2) to check for contamination
 2. Genome Assembly/Reconstruction
-	- [shovill](https://github.com/tseemann/shovill)(default) / [spades](https://github.com/ablab/spades)
+	- [spades](https://github.com/ablab/spades)(default) / [shovill](https://github.com/tseemann/shovill) / [skesa](https://github.com/ncbi/SKESA)
 3. Assembly QC
 	- [bbmap](https://jgi.doe.gov/data-and-tools/software-tools/bbtools/) to rename contigs and remove contigs < 200bp (default value)
+	- [bbmap](https://jgi.doe.gov/data-and-tools/software-tools/bbtools/) to remap the reads to the assembly and calculate coverage, etc.
 	- [assembly-scan](https://github.com/rpetit3/assembly-scan) to produce general assembly statistics
-    - [bbmap](https://jgi.doe.gov/data-and-tools/software-tools/bbtools/) to remap the reads to the assembly and calculate coverage, etc.
-    - [Kraken2](https://github.com/DerrickWood/kraken2) to check for contamination
-    - [FastANI](https://github.com/ParBLiSS/FastANI) to identify the reference genome with the highest nucleotide identity.
-  	- [BUSCO](https://busco.ezlab.org/) to check for genomic completeness using conserved single-copy core genes
-    - [CheckM](https://github.com/Ecogenomics/CheckM) to check for genomic completeness and contamination using conserved single-copy core genes
+	- [Kraken2](https://github.com/DerrickWood/kraken2) to check for contamination
+	- [skani](https://github.com/bluenote-1577/skani) to identify the reference genome with the highest nucleotide identity.
+	- [CheckM](https://github.com/Ecogenomics/CheckM) to check for genomic completeness and contamination using conserved single-copy core genes
 
 
 <p align="center"><picture><img src="assets/GARI_workflow.png" alt="GARI"></picture></p>
@@ -55,7 +54,7 @@ nextflow pull rki-mf1/GARI
 # check the available release versions and development branches
 nextflow info rki-mf1/GARI
 # select a recent release and run
-nextflow run rki-mf1/GARI -r 1.0.0 -profile <singularity, docker, conda, mamba> -params-file params.yaml
+nextflow run rki-mf1/GARI -r 1.1.0 -profile <singularity, docker, conda, mamba> -params-file params.yaml
 ```
 
 Another option is to clone the repository and run the pipeline but we recommend using the `nextflow pull` option and stablese release versions via `-r`. 
@@ -67,8 +66,7 @@ The pipeline needs a few input parameters to be defined. This can be done either
 ```
 input: '/path/to/input/samplesheet.csv'
 outdir: '/path/to/output'
-
-reference: '/path/to/ref_list.csv'
+skani_db: '/path/to/skani_database'
 ```
 
 The additional flags in the command e.g. "-profile" will define how the pipeline is executed e.g. singularity, conda, mamba or docker (singularity is advised if available). 
@@ -81,24 +79,23 @@ When executing the pipeline on a HPC with a queuing system you might want to lim
 | name |  required (to set by user) |  description | type in config  | default value |
 |---|---|---|---|---|
 | input | YES | path to input samplesheet in csv format (more detailed explanation below) | string | null |
-| reference | YES | path to list of references in csv format (more detailed explanation below) | string | null |
 | outdir | YES | path to output directory | string | null |
-| kraken_db | NO | path to precomputed Kraken2 database to sue for classification | string | null (will download and use the babykraken DB if no local DB is specified) |
+| skani_db | YES | path to precomputed skani database to use fro reference/species verification | string | null |
+| kraken_db | NO | path to precomputed Kraken2 database to use for classification | string | null (will download and use the babykraken DB if no local DB is specified) |
 | tmp_dir | NO | path to temp directory (used for some processes) | string | /tmp/ |
 | qc_mode | NO | if set to true expects assemblies as input and only performs QC | boolean | false |
 | preset | NO | predefined preset settings to use (more details below) | string | |
 | assembler | NO | assembler to use (options: 'spades',  'shovill' or 'skesa')| string | 'spades' |
-| busco_lin | NO (but advised)| BUSCO lineage to use for assessment of genomic completeness | string | 'bacteria_odb10' |
-| busco_data | NO | path to local copy of BUSCO lineages datasets, if not set BUSCO downloads the lineages itself | string | |
 | checkm_db | NO | path to local copy of checkM database, if not set checkM downloads the database itself | string | |
-| minSize | NO | minimum contig size to filter out/remove | integer | 200 |
+| min_size | NO | minimum contig size to filter out/remove | integer | 200 |
 | fastp_params | NO | additional parameters to add to the FASTP command | string | '--detect_adapter_for_pe' |
+| assemblyscan_params | NO | additional parameters to add to the assembly_scan command | string | '--json' (json flag required for QC assessment!) |
 | krakenR_params | NO |  additional parameters to add to the KRAKEN2 command assessing reads | string | '--minimum-base-quality 10 --minimum-hit-groups 3 --confidence 0.05' |
 | krakenA_params | NO |  additional parameters to add to the KRAKEN2 command assessing assemblies | string | '--minimum-base-quality 10 --minimum-hit-groups 3 --confidence 0.05' |
 | spades_params | NO |  additional parameters to add to the SPADES command | string | '--isolate' |
 | shovill_params | NO |  additional parameters to add to the SHOVILL command | string | |
 | skesa_params | NO |  additional parameters to add to the SKESA command | string | |
-| busco_params | NO |  additional parameters to add to the BUSCO command | string | '--mode genome'  |
+| skani_params | NO |  additional parameters to add to the skani command | string | '--mode genome'  |
 | publish_dir_enabled | NO |---| boolean | false |
 | publish_dir_mode | NO |---| string | 'copy' |
 
@@ -120,23 +117,9 @@ S1,/path/to/S1_ASM.fasta,,Escherichia coli
 S2,/path/to/S2_ASM.fasta,,Acinetobacter baumannii
 ...
 ```
+The **kraken_db** is the path of the kraken2 database used to classify reads and assembly. Some precomuted Kraken2 databses can be found [here](https://benlangmead.github.io/aws-indexes/k2).
 
-The **reference** list, that must be provided, is a tab separated file with two fields 1. the path to a reference file and 2. the species name. The references provided are used for the reference identification with fastANI the species names will be used to compare to the expected species provided in the samplesheet. Strain information can be given as well as seen below. GARI will then pick the reference with the highest identity and use its statistics for comparison. Its is possible to use a single reference by just having one entry in the reference list.
-An example of a reference list could look like:
-
-`ref_list.tsv`:
-```
-/path/to/GCF_000005845.2_ASM584v2_genomic.fna.gz Escherichia coli str. K-12 substr. MG1655
-/path/to/GCF_000006945.2_ASM694v2_genomic.fna.gz Salmonella enterica subsp. enterica serovar Typhimurium str. LT2
-/path/to/GCF_000008865.2_ASM886v2_genomic.fna.gz Escherichia coli O157:H7 str. Sakai
-...
-```
-A basic bash script [`downloadGenomes.sh`](bin/reference_list_setup/downloadGenomes.sh) to download bacterial reference genomes and create a reference list required for GARI are provided and can be executed before running the pipeline (folder bin/reference_list_setup). The script will download RefSeq reference genomes for all species provided in the input file [`bacteria_species.txt`](bin/reference_list_setup/bacteria_species.txt) and create the reference list. But feel free to adjust [`bacteria_species.txt`](bin/reference_list_setup/bacteria_species.txt) to your needs and add or remove species. **NOTE: to execute these scripts the NCBI datasets CLI & python(v.3+) are expected to be present in your PATH.**
-
-The **krakenDB** is the path of the kraken2 database used to classify reads and assembly. Some precomuted Kraken2 databses can be found [here](https://benlangmead.github.io/aws-indexes/k2).
-
-The busco_lin defines the  [busco lineage](https://busco-data.ezlab.org/v5/data/lineages/) to be used when running BUSCO. While busco_data defines the path where the local copy of the lineages defined can be found.
-
+The **skani_db** is the path of the skani database used to check and identify the closest reference genome. We recommend the use of the GTDB database. A link to precomputed databases as well as a tutorial on how to set up a local version can be found [here](https://github.com/bluenote-1577/skani/wiki/Tutorial:-setting-up-the-GTDB-genome-database-to-search-against).
 
 > **Warning:**
 > Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those
@@ -149,10 +132,6 @@ GARI outputs a variety of assembly and assembly quality statistics that can be f
 | parameter | only species specific | default threshold | description |
 |---|---|---|---|
 flag_max_total_contigs | NO | 500 | - |
-flag_min_BUSCO_S | NO | 95 | - |
-fail_min_BUSCO_S | NO | 90 | - |
-flag_max_BUSCO_D | NO | 1 | - |
-fail_max_BUSCO_D | NO | 5 | - |
 flag_AvgCov | NO | 50 | - |
 fail_AvgCov | NO | 30 | - |
 flag_PercMapped | NO | 98 | - |
@@ -229,3 +208,9 @@ This pipeline uses code and infrastructure developed and maintained by the [nf-c
 > Felipe A. Simão, Robert M. Waterhouse, Panagiotis Ioannidis, Evgenia V. Kriventseva, Evgeny M. Zdobnov, BUSCO: assessing genome assembly and annotation completeness with single-copy orthologs, Bioinformatics, Volume 31, Issue 19, October 2015, Pages 3210–3212, https://doi.org/10.1093/bioinformatics/btv351
 >
 > Parks DH, Imelfort M, Skennerton CT, Hugenholtz P, Tyson GW. CheckM: assessing the quality of microbial genomes recovered from isolates, single cells, and metagenomes. Genome Res. 2015 Jul;25(7):1043-55. doi: 10.1101/gr.186072.114. Epub 2015 May 14. PMID: 25977477; PMCID: PMC4484387.
+>
+> Prjibelski, A., Antipov, D., Meleshko, D., Lapidus, A., & Korobeynikov, A. (2020). Using SPAdes de novo assembler. Current Protocols in Bioinformatics, 70, e102. doi: 10.1002/cpbi.102 
+>
+> Souvorov, A., Agarwala, R. & Lipman, D. SKESA: strategic k-mer extension for scrupulous assemblies. Genome Biol 19, 153 (2018). https://doi.org/10.1186/s13059-018-1540-z
+>
+> Jim Shaw and Yun William Yu. Fast and robust metagenomic sequence comparison through sparse chaining with skani. Nature Methods (2023). https://doi.org/10.1038/s41592-023-02018-3
