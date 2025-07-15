@@ -3,8 +3,7 @@
                 "flag_max_total_contigs": 500,
                 "flag_AvgCov": 50,
                 "fail_AvgCov": 30,
-                "flag_PercMapped": 98,
-                "fail_PercMapped": 90,
+                "flag_PercMapped": 95,
                 "flag_ref_ident": 90,
 
                 "flag_krakenTarget": 60,

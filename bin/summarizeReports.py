@@ -35,9 +35,9 @@ if __name__ == '__main__':
                 for val in data["reads"]:
                     if isinstance(data["reads"][val], float)or isinstance(data["reads"][val], int):
                         data["reads"][val] = "{:.2f}".format(data["reads"][val])
-                for val in data["Kraken2"]:
-                    if isinstance(data["Kraken2"][val], float) or isinstance(data["Kraken2"][val], int):
-                        data["Kraken2"][val] = "{:.2f}".format(data["Kraken2"][val])
+                for val in data["inferred"]:
+                    if isinstance(data["inferred"][val], float) or isinstance(data["inferred"][val], int):
+                        data["inferred"][val] = "{:.2f}".format(data["inferred"][val])
                 print(data)
 
                 json_list.append(pd.json_normalize(data))
@@ -46,7 +46,8 @@ if __name__ == '__main__':
     # remove the nested structure of the json and rename columns
     data_renamed = {}
     for col in df:
-        newCol = col.split(".")[-1]
+        #newCol = col.split(".")[-1]
+        newCol = col.replace(".", "_")
         data_renamed[col] = newCol
     df_renamed = df.rename(columns=data_renamed)
     

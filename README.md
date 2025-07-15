@@ -18,8 +18,8 @@ The pipeline comprises the following steps/modules:
 2. Genome Assembly/Reconstruction
 	- [spades](https://github.com/ablab/spades)(default) / [shovill](https://github.com/tseemann/shovill) / [skesa](https://github.com/ncbi/SKESA)
 3. Assembly QC
-	- [bbmap](https://jgi.doe.gov/data-and-tools/software-tools/bbtools/) to rename contigs and remove contigs < 200bp (default value)
-	- [bbmap](https://jgi.doe.gov/data-and-tools/software-tools/bbtools/) to remap the reads to the assembly and calculate coverage, etc.
+	- [bbmap](https://sourceforge.net/projects/bbmap/) to rename contigs and remove contigs < 200bp (default value)
+	- [bbmap](https://sourceforge.net/projects/bbmap/) to remap the reads to the assembly and calculate coverage, etc.
 	- [assembly-scan](https://github.com/rpetit3/assembly-scan) to produce general assembly statistics
 	- [Kraken2](https://github.com/DerrickWood/kraken2) to check for contamination
 	- [skani](https://github.com/bluenote-1577/skani) to identify the reference genome with the highest nucleotide identity.
@@ -117,7 +117,7 @@ S1,/path/to/S1_ASM.fasta,,Escherichia coli
 S2,/path/to/S2_ASM.fasta,,Acinetobacter baumannii
 ...
 ```
-The **kraken_db** is the path of the kraken2 database used to classify reads and assembly. Some precomuted Kraken2 databses can be found [here](https://benlangmead.github.io/aws-indexes/k2).
+The **kraken_db** is the path of the Kraken2 database used to classify reads and assembly. Some precomuted Kraken2 databses can be found [here](https://benlangmead.github.io/aws-indexes/k2).
 
 The **skani_db** is the path of the skani database used to check and identify the closest reference genome. We recommend the use of the GTDB database. A link to precomputed databases as well as a tutorial on how to set up a local version can be found [here](https://github.com/bluenote-1577/skani/wiki/Tutorial:-setting-up-the-GTDB-genome-database-to-search-against).
 
@@ -134,8 +134,7 @@ GARI outputs a variety of assembly and assembly quality statistics that can be f
 flag_max_total_contigs | NO | 500 | - |
 flag_AvgCov | NO | 50 | - |
 fail_AvgCov | NO | 30 | - |
-flag_PercMapped | NO | 98 | - |
-fail_PercMapped | NO | 90 | - |
+flag_PercMapped | NO | 95 | - |
 flag_ref_ident | NO | 90 | - |
 flag_checkM_complete | NO | 98 | - |
 fail_checkM_complete | NO | 95 | - |
