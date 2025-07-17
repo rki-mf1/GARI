@@ -35,9 +35,9 @@ if __name__ == '__main__':
                 for val in data["reads"]:
                     if isinstance(data["reads"][val], float)or isinstance(data["reads"][val], int):
                         data["reads"][val] = "{:.2f}".format(data["reads"][val])
-                for val in data["inferred"]:
-                    if isinstance(data["inferred"][val], float) or isinstance(data["inferred"][val], int):
-                        data["inferred"][val] = "{:.2f}".format(data["inferred"][val])
+                for val in data["reference"]:
+                    if isinstance(data["reference"][val], float) or isinstance(data["reference"][val], int):
+                        data["reference"][val] = "{:.2f}".format(data["reference"][val])
                 print(data)
 
                 json_list.append(pd.json_normalize(data))

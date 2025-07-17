@@ -92,7 +92,7 @@ def parseAssemblyScan(statsPath):
   values=["total_contig", "total_contig_length", "max_contig_length", "mean_contig_length", "median_contig_length", "min_contig_length", "n50_contig_length", "l50_contig_count", "num_contig_non_acgtn", "contig_percent_a", "contig_percent_c", "contig_percent_g", "contig_percent_t", "contig_percent_n", "contig_non_acgtn", "contigs_greater_1m", "contigs_greater_100k", "contigs_greater_10k", "contigs_greater_1k", "percent_contigs_greater_1m", "percent_contigs_greater_100k", "percent_contigs_greater_10k", "percent_contigs_greater_1k"]
   values_float=["contig_percent_a", "contig_percent_c", "contig_percent_g", "contig_percent_t", "contig_percent_n", "contig_non_acgtn", "percent_contigs_greater_1m", "percent_contigs_greater_100k", "percent_contigs_greater_10k", "percent_contigs_greater_1k"]
   # values as they should be named for GARI output
-  values_renamed=["num_contigs", "length", "max_contig_length", "mean_contig_length", "median_contig_length", "min_contig_length", "N50", "L50", "num_contig_non_acgtn", "percent_A", "percent_C", "percent_G", "percent_T", "percent_N", "contig_non_acgtn", "contigs_greater_1m", "contigs_greater_100k", "contigs_greater_10k", "contigs_greater_1k", "percent_contigs_greater_1m", "percent_contigs_greater_100k", "percent_contigs_greater_10k", "percent_contigs_greater_1k"]
+  values_renamed=["num_contigs", "length", "max_contig_length", "mean_contig_length", "median_contig_length", "min_contig_length", "N50", "L50", "num_contig_non_acgtn", "A_percentage", "C_percentage", "G_percentage", "T_percentage", "N_percentage", "non_ACGTN_percentage", "contigs_greater_1m", "contigs_greater_100k", "contigs_greater_10k", "contigs_greater_1k", "contigs_greater_1m_percentage", "contigs_greater_100k_percentage", "contigs_greater_10k_percentage", "contigs_greater_1k_percentage"]
   
   statHash={}
 
@@ -105,16 +105,16 @@ def parseAssemblyScan(statsPath):
       else:
         statHash[values_renamed[i]] = int(data[v])
 
-    statHash["GC_percentage"] = round(statHash["percent_G"] + statHash["percent_C"], 2)
+    statHash["GC_percentage"] = round(statHash["G_percentage"] + statHash["C_percentage"], 2)
 
   return(statHash)
 
 
 def parseKRAKEN(krakenPath, t_ID_tar, t_ID_host):
   krakenHash = {}
-  krakenHash["Kraken2_target"] = 0
-  krakenHash["Kraken2_host"] = 0
-  krakenHash["Kraken2_unclassified"] = 0
+  krakenHash["kraken2_target"] = 0
+  krakenHash["kraken2_host"] = 0
+  krakenHash["kraken2_unclassified"] = 0
   with open(krakenPath, 'rt') as f:
     for line in f:
       splitted = line.rstrip().split("\t")
@@ -122,11 +122,11 @@ def parseKRAKEN(krakenPath, t_ID_tar, t_ID_host):
       perc = float(splitted[0])
 
       if tarID == 0:
-        krakenHash["Kraken2_unclassified"] = perc
+        krakenHash["kraken2_unclassified"] = perc
       if tarID == t_ID_tar:
-        krakenHash["Kraken2_target"] = perc
+        krakenHash["kraken2_target"] = perc
       if tarID == t_ID_host:
-        krakenHash["Kraken2_host"] = perc
+        krakenHash["kraken2_host"] = perc
 
   return(krakenHash)
 
@@ -164,20 +164,20 @@ def checkThresholds(QCHash, refSpecies, thresh_Hash):
   # 1. More than X fragments/scaffolds --> very fragmented
   if QCHash["assembly"]["num_contigs"] >= int(thresh_Hash["flag_max_total_contigs"]):
     flagged = True
-    errorList.append("Fragmented")
+    errorList.append("num_contigs")
 
   # 2. CheckM completeness
-    if QCHash["assembly"]["CheckM_completeness"] < float(thresh_Hash["flag_checkM_complete"]):
-      errorList.append("CheckM_completeness") 
+    if QCHash["assembly"]["checkM_completeness"] < float(thresh_Hash["flag_checkM_complete"]):
+      errorList.append("checkM_completeness") 
       flagged = True
-      if QCHash["assembly"]["CheckM_completeness"] < float(thresh_Hash["fail_checkM_complete"]):
+      if QCHash["assembly"]["checkM_completeness"] < float(thresh_Hash["fail_checkM_complete"]):
         error = True
         
   # 3. CheckM contamination
-  if QCHash["assembly"]["CheckM_contamination"] >= float(thresh_Hash["flag_checkM_contamination"]):
+  if QCHash["assembly"]["checkM_contamination"] >= float(thresh_Hash["flag_checkM_contamination"]):
     flagged = True
-    errorList.append("CheckM_contamination") 
-    if QCHash["assembly"]["CheckM_contamination"] >= float(thresh_Hash["fail_checkM_contamination"]):
+    errorList.append("checkM_contamination") 
+    if QCHash["assembly"]["checkM_contamination"] >= float(thresh_Hash["fail_checkM_contamination"]):
       error = True
 
   # 4. Avg. Cov 
@@ -193,7 +193,7 @@ def checkThresholds(QCHash, refSpecies, thresh_Hash):
     errorList.append("reads_mapped_asm_percentage")
 
   # 6. No reference found == NA
-  if QCHash["inferred"]["reference_accession"] == 'NA':
+  if QCHash["reference"]["accession"] == 'NA':
     error = True
     errorList.append("no_reference")
   else: # check reference values only if there is a ref
@@ -209,9 +209,9 @@ def checkThresholds(QCHash, refSpecies, thresh_Hash):
           errorList.append("wrong_reference")
   
   # 7. ref identity 
-    if QCHash["inferred"]["reference_identity"] <= float(thresh_Hash["flag_ref_ident"]):
+    if QCHash["reference"]["identity"] <= float(thresh_Hash["flag_ref_ident"]):
       flagged = True
-      errorList.append("inferred_reference_identity")
+      errorList.append("reference_identity")
 
   if args.ck == "true": # only classify kraken2 output if enabled
     # 8. Kraken2 - target
@@ -241,13 +241,13 @@ def checkThresholds(QCHash, refSpecies, thresh_Hash):
   if not thresh_Hash["flag_min_GC"] == "NA": # only execute if thresholds not NA
     if not thresh_Hash["flag_min_GC"] <=  QCHash["assembly"]["GC_percentage"] <= thresh_Hash["flag_max_GC"]:
       flagged=True
-      errorList.append("GC_content")
+      errorList.append("GC_percentage")
 
   # 11. Length range
   if not thresh_Hash["flag_min_length"] == "NA": # only execute if thresholds not NA
     if not thresh_Hash["flag_min_length"] <=  QCHash["assembly"]["length"] <= thresh_Hash["flag_max_length"]:
       flagged=True
-      errorList.append("Assembly_length")
+      errorList.append("assembly_length")
       if not thresh_Hash["fail_min_length"] <=  QCHash["assembly"]["length"] <= thresh_Hash["fail_max_length"]:
         error = True
 
@@ -273,8 +273,8 @@ if __name__ == '__main__':
   import json
 
   parser = argparse.ArgumentParser(description="Create summary report of GR workflow")
-  parser.add_argument("--cm", "-checkM", type=str, required=False, help="CheckM tsv report")
-  parser.add_argument("--sk", "-skani", type=str, required=True, help="fastANI output")
+  parser.add_argument("--cm", "-checkM", type=str, required=False, help="checkM tsv report")
+  parser.add_argument("--sk", "-skani", type=str, required=True, help="skani output")
   parser.add_argument("--s", "-stats", type=str, required=True, help="stats output")
   parser.add_argument("--kr", "-krakenread", type=str, required=False, help="kraken report for reads")
   parser.add_argument("--ka", "-krakenasm", type=str, required=True, help="kraken report for assembly")
@@ -298,31 +298,31 @@ if __name__ == '__main__':
   sampleID = args.sk.split("_skani.")[0]
   dataHash["sample_ID"] = sampleID
   dataHash["expected_species"] = args.sp
-  dataHash["pipeline"] = {}
-  dataHash["pipeline"]["GARI_version"] = args.gv
-  dataHash["pipeline"]["assembler"] = args.ga
-  dataHash["pipeline"]["Skani_DB"] = args.skDB.split("/")[-1]
-  dataHash["pipeline"]["Kraken2_DB"] = args.gkDB.split("/")[-1]
-  dataHash["pipeline"]["Kraken2_target_NCBI_tax_ID"] = thresholds["kraken2_targetID"]
-  dataHash["pipeline"]["Kraken2_host_NCBI_tax_ID"] = thresholds["kraken2_hostID"]
+  dataHash["GARI"] = {}
+  dataHash["GARI"]["version"] = args.gv
+  dataHash["GARI"]["assembler"] = args.ga
+  dataHash["GARI"]["skani_DB"] = args.skDB.split("/")[-1]
+  dataHash["GARI"]["kraken2_DB"] = args.gkDB.split("/")[-1]
+  dataHash["GARI"]["kraken2_target_taxid"] = thresholds["kraken2_targetID"]
+  dataHash["GARI"]["kraken2_host_taxid"] = thresholds["kraken2_hostID"]
 
   dataHash["assembly"] = parseAssemblyScan(args.s)
 
   if args.cm:
     checkM_results = parseCheckM(args.cm)
-    dataHash["assembly"]["CheckM_marker_lineage"] = checkM_results[0]
-    dataHash["assembly"]["CheckM_completeness"] = checkM_results[1]
-    dataHash["assembly"]["CheckM_contamination"] = checkM_results[2]
-    dataHash["assembly"]["CheckM_strain_heterogeneity"] = checkM_results[3]
+    dataHash["assembly"]["checkM_marker_lineage"] = checkM_results[0]
+    dataHash["assembly"]["checkM_completeness"] = checkM_results[1]
+    dataHash["assembly"]["checkM_contamination"] = checkM_results[2]
+    dataHash["assembly"]["checkM_strain_heterogeneity"] = checkM_results[3]
 
   ref_file, ref_name, ref_ident, aniCov_ref, aniCov_query = parseSKANI(args.sk)
-  dataHash["inferred"] = {}
-  dataHash["inferred"]["reference_accession"] = ref_file
-  dataHash["inferred"]["reference_taxon"] = ref_name
-  dataHash["inferred"]["reference_species"] = ref_name.split(" ")[1] + " " + ref_name.split(" ")[2]
-  dataHash["inferred"]["reference_identity"] = ref_ident
-  dataHash["inferred"]["reference_coverage"] = aniCov_ref
-  dataHash["inferred"]["reference_coverage_asm"] = aniCov_query
+  dataHash["reference"] = {}
+  dataHash["reference"]["accession"] = ref_file
+  dataHash["reference"]["taxon"] = ref_name
+  dataHash["reference"]["species"] = ref_name.split(" ")[1] + " " + ref_name.split(" ")[2]
+  dataHash["reference"]["identity"] = ref_ident
+  dataHash["reference"]["cov_percentage"] = aniCov_ref
+  dataHash["reference"]["cov_asm_percentage"] = aniCov_query
 
   if args.p:
     dataHash["reads"] = parseFASTP(args.p)
@@ -331,16 +331,16 @@ if __name__ == '__main__':
 
   # kraken2 assembly (first to init the kraken2 hash)
   kraken2_asm = parseKRAKEN(args.ka, thresholds["kraken2_targetID"], thresholds["kraken2_hostID"])
-  dataHash["assembly"]["tax_class_target_percentage"] = kraken2_asm["Kraken2_target"]
-  dataHash["assembly"]["tax_class_host_percentage"] = kraken2_asm["Kraken2_host"]
-  dataHash["assembly"]["tax_class_unclassified_percentage"] = kraken2_asm["Kraken2_unclassified"]
+  dataHash["assembly"]["tax_class_target_percentage"] = kraken2_asm["kraken2_target"]
+  dataHash["assembly"]["tax_class_host_percentage"] = kraken2_asm["kraken2_host"]
+  dataHash["assembly"]["tax_class_unclassified_percentage"] = kraken2_asm["kraken2_unclassified"]
 
   # kraken2 read
   if args.kr:
     kraken2_read = parseKRAKEN(args.kr, thresholds["kraken2_targetID"], thresholds["kraken2_hostID"])
-    dataHash["reads"]["tax_class_target_percentage"] = kraken2_read["Kraken2_target"]
-    dataHash["reads"]["tax_class_host_percentage"] = kraken2_read["Kraken2_host"]
-    dataHash["reads"]["tax_class_unclassified_percentage"] = kraken2_read["Kraken2_unclassified"]
+    dataHash["reads"]["tax_class_target_percentage"] = kraken2_read["kraken2_target"]
+    dataHash["reads"]["tax_class_host_percentage"] = kraken2_read["kraken2_host"]
+    dataHash["reads"]["tax_class_unclassified_percentage"] = kraken2_read["kraken2_unclassified"]
   else: # for qc_mode add NA for read based info
     dataHash["reads"]["tax_class_target_percentage"] = 'NA'
     dataHash["reads"]["tax_class_host_percentage"] = 'NA'
@@ -360,8 +360,8 @@ if __name__ == '__main__':
   # 2) Check for threshold violations
   qc_class, qc_errorList = checkThresholds(dataHash, ref_name, thresholds)
   
-  dataHash["QC_status"] = qc_class
-  dataHash["QC_warnings"] = "|".join(qc_errorList)
+  dataHash["GARI_QC_status"] = qc_class
+  dataHash["GARI_QC_warnings"] = "|".join(qc_errorList)
   
 
 ######################################################################################
