@@ -10,20 +10,21 @@
 
 **G**eneric **A**ssembly and **R**econstruction p**I**peline (GARI)
 
-Nextflow pipeline for the denovo genome reconstruction of bacterial pathogens.
-The pipeline comprises the following steps/modules:
+Nextflow pipeline for the de novo genome reconstruction of bacterial pathogens.
+The pipeline comprises of the following steps/modules:
 1. Read QC
 	- [fastp](https://github.com/OpenGene/fastp) to remove remaining adapters and perform very basic quality trimming
 	- [Kraken2](https://github.com/DerrickWood/kraken2) to check for contamination
 2. Genome Assembly/Reconstruction
-	- [spades](https://github.com/ablab/spades)(default) / [shovill](https://github.com/tseemann/shovill) / [skesa](https://github.com/ncbi/SKESA)
+	- [spades](https://github.com/ablab/spades) (default) / [shovill](https://github.com/tseemann/shovill) / [skesa](https://github.com/ncbi/SKESA)
 3. Assembly QC
-	- [bbmap](https://sourceforge.net/projects/bbmap/) to rename contigs and remove contigs < 200bp (default value)
+	- [bbrename](https://sourceforge.net/projects/bbmap/) to rename contigs and remove contigs < 200bp (default value)
 	- [bbmap](https://sourceforge.net/projects/bbmap/) to remap the reads to the assembly and calculate coverage, etc.
 	- [assembly-scan](https://github.com/rpetit3/assembly-scan) to produce general assembly statistics
 	- [Kraken2](https://github.com/DerrickWood/kraken2) to check for contamination
 	- [skani](https://github.com/bluenote-1577/skani) to identify the reference genome with the highest nucleotide identity.
 	- [CheckM](https://github.com/Ecogenomics/CheckM) to check for genomic completeness and contamination using conserved single-copy core genes
+4. Classification combining read & assembly parameters  
 
 
 <p align="center"><picture><img src="assets/GARI_workflow.png" alt="GARI"></picture></p>
@@ -54,10 +55,10 @@ nextflow pull rki-mf1/GARI
 # check the available release versions and development branches
 nextflow info rki-mf1/GARI
 # select a recent release and run
-nextflow run rki-mf1/GARI -r v1.1.0 -profile <singularity, docker, conda, mamba> -params-file params.yaml
+nextflow run rki-mf1/GARI -r v1.1.1 -profile <singularity, docker, conda, mamba> -params-file params.yaml
 ```
 
-Another option is to clone the repository and run the pipeline but we recommend using the `nextflow pull` option and stablese release versions via `-r`. 
+Another option is to clone the repository and run the pipeline but we recommend using the `nextflow pull` option and stable release versions via `-r`. 
 
 
 The pipeline needs a few input parameters to be defined. This can be done either directly in the command line, or via a parameter file (params.yaml as in the command above). Using a params file is advised. Here is a minimum example of a params file with the required parameters:
@@ -69,7 +70,7 @@ outdir: '/path/to/output'
 skani_db: '/path/to/skani_database'
 ```
 
-The additional flags in the command e.g. "-profile" will define how the pipeline is executed e.g. singularity, conda, mamba or docker (singularity is advised if available). 
+The additional flags in the command e.g. "-profile" will define how the pipeline is executed e.g. singularity, conda, mamba or docker (we recommend using singularity, if available). 
 When executing the pipeline on a HPC with a queuing system you might want to limit the amount of jobs submitted in parallel you can use the option "-queue-size 20" to limit the jobs submitted to the queue to 20 in the nextflow command above.
 
 
@@ -99,7 +100,7 @@ When executing the pipeline on a HPC with a queuing system you might want to lim
 | publish_dir_enabled | NO |---| boolean | false |
 | publish_dir_mode | NO |---| string | 'copy' |
 
-### Detailed explanations
+### Detailed walkthrough 
 First, prepare a samplesheet with your **input** data that looks as follows, with each row representing a pair of fastq files (paired end):
 `samplesheet.csv`:
 ```csv
@@ -117,7 +118,7 @@ S1,/path/to/S1_ASM.fasta,,Escherichia coli
 S2,/path/to/S2_ASM.fasta,,Acinetobacter baumannii
 ...
 ```
-The **kraken_db** is the path of the Kraken2 database used to classify reads and assembly. Some precomuted Kraken2 databses can be found [here](https://benlangmead.github.io/aws-indexes/k2).
+The **kraken_db** is the path of the Kraken2 database used to classify reads and assembly. Some precomputed Kraken2 databses can be found [here](https://benlangmead.github.io/aws-indexes/k2).
 
 The **skani_db** is the path of the skani database used to check and identify the closest reference genome. We recommend the use of the GTDB database. A link to precomputed databases as well as a tutorial on how to set up a local version can be found [here](https://github.com/bluenote-1577/skani/wiki/Tutorial:-setting-up-the-GTDB-genome-database-to-search-against).
 
@@ -127,7 +128,9 @@ The **skani_db** is the path of the skani database used to check and identify th
 > see [docs](https://nf-co.re/usage/configuration#custom-configuration-files).
 
 ## Thresholds and QC filters:
-GARI outputs a variety of assembly and assembly quality statistics that can be found in the final GARI report. A subset of these values is used to "classify" each generated assembly into the categories: "PASSED", "FLAGGED" and "FAILED". 
+GARI outputs a variety of assembly and assembly quality statistics that can be found in the final GARI QC report. A subset of these values is used to "classify" each generated assembly into the categories: "PASSED", "FLAGGED" and "FAILED". \
+
+Here is an overview of parameters and thresholds used for the assessment:
 
 | parameter | only species specific | default threshold | description |
 |---|---|---|---|
@@ -149,17 +152,17 @@ fail_min_length | YES | - | - |
 flag_max_GC |  YES | - | - |
 flag_min_GC | YES | - | - |
 
-Thresholds are defined in the file [`QC_thresholds.json`](assets/QC_thresholds.json) within the GARI assests folder. Species specific thresholds are defined for 56 common bacterial species. These species specific thresholds were calculated using complete RefSeq genomes from NCBI. Thresholds to flag assemblies are generally based on the 10/90% quantiles of the RefSeq assemblies while thresholds to fail assemblies are based on the 0/100% quantiles. \
+Thresholds are defined in the file [`QC_thresholds.json`](assets/QC_thresholds.json) within the GARI assests folder. Species specific thresholds are defined for 56 relevant bacterial pathogens. These species specific thresholds were calculated using complete RefSeq genomes from NCBI. Thresholds to flag assemblies are generally based on the 10/90% quantiles of the RefSeq assemblies while thresholds to fail assemblies are based on the 0/100% quantiles. \
 Feel free to add a new species to QC_thresholds.json if needed. 
 
 ## Presets:
-GARI allows to define presets of run wide parameters. This is mostly useful when running GARI with specific settings that should be also be applied to a later dataset, so the parameters dont need to be specified for each run. \
+GARI allows to define presets of run wide parameters. This is mostly useful when running GARI with specific settings that should be also be applied to a later dataset, so the parameters don't need to be specified for each run. \
 Such presets are defined in the [`presets.config`](conf/presets.config) within the config folder. Defining the preset parameter to any string defined in the presets.config will automatically load these setting and apply them to the run of GARI. 
 Feel free to define new presets within bin/presets.config if needed.
 
 ## HPC & QOL
 
-When running gari on the HPC you need to set the executor to use slurm. This can be done either in a configfile provided via -c <file.config> or by defining it in e.g. your .bashrc like:
+When running GARI on the HPC you need to set the executor to use slurm. This can be done either in a configfile provided via -c <file.config> or by defining it in e.g. your .bashrc like:
 ```
 export NXF_EXECUTOR=slurm
 ```
@@ -177,10 +180,6 @@ We thank the following people for their extensive assistance in the development 
 Silver A. Wolf, Torsten Houwaart, Lakshmipriya Thrukonda, Vladimir Bajić and Mustafa Helal
 
 <!-- TODO nf-core: If applicable, make list of people who have also contributed -->
-
-## Contributions and Support
-
-If you would like to contribute to this pipeline, please see the [contributing guidelines](.github/CONTRIBUTING.md).
 
 ## Citations
 
@@ -203,8 +202,6 @@ This pipeline uses code and infrastructure developed and maintained by the [nf-c
 >  Prjibelski, A., Antipov, D., Meleshko, D., Lapidus, A., & Korobeynikov, A. (2020). Using SPAdes de novo assembler. Current Protocols in Bioinformatics, 70, e102. doi: 10.1002/cpbi.102 
 >
 > Wood, D.E., Lu, J. & Langmead, B. Improved metagenomic analysis with Kraken 2. Genome Biol 20, 257 (2019). https://doi.org/10.1186/s13059-019-1891-0
->
-> Felipe A. Simão, Robert M. Waterhouse, Panagiotis Ioannidis, Evgenia V. Kriventseva, Evgeny M. Zdobnov, BUSCO: assessing genome assembly and annotation completeness with single-copy orthologs, Bioinformatics, Volume 31, Issue 19, October 2015, Pages 3210–3212, https://doi.org/10.1093/bioinformatics/btv351
 >
 > Parks DH, Imelfort M, Skennerton CT, Hugenholtz P, Tyson GW. CheckM: assessing the quality of microbial genomes recovered from isolates, single cells, and metagenomes. Genome Res. 2015 Jul;25(7):1043-55. doi: 10.1101/gr.186072.114. Epub 2015 May 14. PMID: 25977477; PMCID: PMC4484387.
 >
