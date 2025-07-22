@@ -9,7 +9,7 @@ import pandas as pd
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Summarizes a set of json files for QC parameters")
-    parser.add_argument("--g", "-gariOut", type=str, help="GARI output directory with folder per sample")
+    parser.add_argument("--g", "-gariOut", type=str, help="path to directory with QC json files for each sample")
     parser.add_argument("--p", "-prefix", type=str, help="prefix for table output")
     args = parser.parse_args()
 
