@@ -12,6 +12,10 @@ def parseThresholds(inPath, species):
   if species in data: # if some specific thresholds for a given species exist overwrite the default ones
     for thresh in data[species]:
       t_hash[thresh] = data[species][thresh]
+  elif " " in species: # check if the species is really a species name if so check if genus has thresholds
+    genus = species.split(" ")[0]
+    for thresh in data[genus]:
+      t_hash[thresh] = data[genus][thresh]   
 
   return t_hash
 
@@ -250,6 +254,15 @@ def checkThresholds(QCHash, refSpecies, thresh_Hash):
       errorList.append("assembly_length")
       if not thresh_Hash["fail_min_length"] <=  QCHash["assembly"]["length"] <= thresh_Hash["fail_max_length"]:
         error = True
+  
+  # 12. N50
+  if not thresh_Hash["flag_min_N50"] == "NA": # only execute if thresholds not NA
+    if QCHash["assembly"]["N50"] < thresh_Hash["flag_min_N50"]:
+      flagged=True
+      errorList.append("N50")
+      if QCHash["assembly"]["N50"] < thresh_Hash["fail_min_N50"]:
+        error = True
+
 
 # Total QC warnings allowed before automatical FAIL
 #  if len(errorList) > maxFlagsAllowed:
