@@ -27,9 +27,9 @@ def parseFASTP(fastpPath):
     data = json.load(f)
     dataHash['total'] = data['summary']['before_filtering']['total_reads']
     dataHash['past_QC_filter'] = data['summary']['after_filtering']['total_reads']
-    dataHash['past_filter_percent'] = round(float(data['summary']['after_filtering']['total_reads'])/float(data['summary']['before_filtering']['total_reads'])*100, 2)
+    dataHash['past_filter_percentage'] = round(float(data['summary']['after_filtering']['total_reads'])/float(data['summary']['before_filtering']['total_reads'])*100, 2)
     dataHash['past_filter_bps'] = data['summary']['after_filtering']['total_bases']
-    dataHash['past_filter_GC_percent'] = round(data['summary']['after_filtering']['gc_content']*100, 2) 
+    dataHash['past_filter_GC_percentage'] = round(data['summary']['after_filtering']['gc_content']*100, 2) 
     dataHash['low_quality'] = data['filtering_result']['low_quality_reads']
     dataHash['too_many_Ns'] = data['filtering_result']['too_many_N_reads']
     dataHash['too_short'] = data['filtering_result']['too_short_reads']
@@ -260,8 +260,8 @@ def checkThresholds(QCHash, refSpecies, thresh_Hash):
     if QCHash["assembly"]["N50"] < thresh_Hash["flag_min_N50"]:
       flagged=True
       errorList.append("N50")
-      if QCHash["assembly"]["N50"] < thresh_Hash["fail_min_N50"]:
-        error = True
+      #if QCHash["assembly"]["N50"] < thresh_Hash["fail_min_N50"]:
+      #  error = True
 
 
 # Total QC warnings allowed before automatical FAIL
