@@ -7,7 +7,7 @@ process STAT_SUMMARY {
         'biocontainers/python:3.8.3' }"
 
     input:
-      tuple val(meta), file(ASM), file(SKANI), file(STATS), file(FASTP), file(KRAKEN), file(KRAKEN_ASM), file(BBMAP), file(CHECKM)
+      tuple val(meta), file(ASM), file(SKANI), file(STATS), file(FASTP), file(KRAKEN), file(KRAKEN_ASM), file(KRAKEN_ASM_NORM), file(BBMAP), file(CHECKM)
       file(thresholds)
       path(krakenDB)
       path(skaniDB)
@@ -25,6 +25,7 @@ process STAT_SUMMARY {
       --p $FASTP \\
       --kr $KRAKEN \\
       --ka $KRAKEN_ASM \\
+      --kan $KRAKEN_ASM_NORM \\
       --c ${BBMAP} \\
       --o ${meta.id}_QC.json \\
       --sp "${meta.species}" \\

@@ -53,6 +53,7 @@ include { SPADES } from '../modules/nf-core/spades/main'
 include { SHOVILL } from '../modules/nf-core/shovill/main'
 include { ASSEMBLYSCAN } from '../modules/nf-core/assemblyscan/main'
 include { SKANI_SEARCH } from '../modules/nf-core/skani/search/main'
+include { KRAKEN_NORMALIZE} from '../modules/local/krakenNormalize/normalizeKraken.nf'
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN MAIN WORKFLOW
@@ -175,11 +176,16 @@ workflow GARI {
         asm_adjust, 
         ch_kraken_db, 
         false, 
-        false,
+        true,
         false
     )
     ch_versions = ch_versions.mix(KRAKEN2_ASM.out.versions)
+
+    KRAKEN_NORMALIZE (
+        KRAKEN2_ASM.out.classified_reads_assignment,
+        threshold_file
         
+    )
 
     SKANI_SEARCH (
         asm_adjust2,
@@ -200,12 +206,13 @@ workflow GARI {
         fastp_ch = FASTP.out.json.map{[ [id: it[0].id, single_end:false, species: it[0].species], it[1] ] }
         krakenR_ch = KRAKEN2_READ.out.report.map{[ [id: it[0].id, single_end:false, species: it[0].species], it[1]] }
         krakenA_ch = KRAKEN2_ASM.out.report.map{[ [id: it[0].id.minus("-ASM"), single_end:false, species: it[0].species], it[1]] }
+        krakenA_norm_ch = KRAKEN_NORMALIZE.out.report_norm.map{[ [id: it[0].id.minus("-ASM"), single_end:false, species: it[0].species], it[1]] }
         bbmap_ch = BBMAP_ALIGN.out.log.map{[ [id: it[0].id, single_end:false, species: it[0].species], it[1]] }
         checkm_ch = CHECKM_LINEAGEWF.out.checkm_tsv.map{[ [id: it[0].id, single_end:false, species: it[0].species], it[1]] }
 
-        concat_ch = asm.join(skani_ch).join(asmscan_ch).join(fastp_ch).join(krakenR_ch).join(krakenA_ch).join(bbmap_ch).join(checkm_ch)
+        concat_ch = asm.join(skani_ch).join(asmscan_ch).join(fastp_ch).join(krakenR_ch).join(krakenA_ch).join(krakenA_norm_ch).join(bbmap_ch).join(checkm_ch)
 
-
+    
         STAT_SUMMARY (
             concat_ch,
             threshold_file,
@@ -224,9 +231,10 @@ workflow GARI {
         skani_ch = SKANI_SEARCH.out.search.map{[ [id: it[0].id, single_end:true, species: it[0].species], it[1] ] }
         asmscan_ch = ASSEMBLYSCAN.out.json.map{[ [id: it[0].id, single_end:true, species: it[0].species], it[1]] }
         krakenA_ch = KRAKEN2_ASM.out.report.map{[ [id: it[0].id.minus("-ASM"), single_end:true, species: it[0].species], it[1]] }
+        krakenA_ch_norm = KRAKEN_NORMALIZE.out.report_norm.map{[ [id: it[0].id.minus("-ASM"), single_end:true, species: it[0].species], it[1]] }
         checkm_ch = CHECKM_LINEAGEWF.out.checkm_tsv.map{[ [id: it[0].id, single_end:true, species: it[0].species], it[1]] }
 
-        concat_ch = asm.join(skani_ch).join(asmscan_ch).join(krakenA_ch).join(checkm_ch)
+        concat_ch = asm.join(skani_ch).join(asmscan_ch).join(krakenA_ch).join(krakenA_ch_norm).join(checkm_ch)
 
         STAT_SUMMARY_QC (
             concat_ch,

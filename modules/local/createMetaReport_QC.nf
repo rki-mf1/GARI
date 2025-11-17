@@ -7,7 +7,7 @@ process STAT_SUMMARY_QC {
         'biocontainers/python:3.8.3' }"
 
     input:
-      tuple val(meta), file(ASM), file(SKANI), file(STATS), file(KRAKEN_ASM), file(CHECKM)
+      tuple val(meta), file(ASM), file(SKANI), file(STATS), file(KRAKEN_ASM), file(KRAKEN_ASM_NORM), file(CHECKM)
       file(thresholds)
       path(krakenDB)
       path(skaniDB)
@@ -23,6 +23,7 @@ process STAT_SUMMARY_QC {
       --sk $SKANI \\
       --s $STATS \\
       --ka $KRAKEN_ASM \\
+      --kan $KRAKEN_ASM_NORM \\
       --o ${meta.id}_QC.json \\
       --sp "${meta.species}" \\
       --gv ${workflow.manifest.version} \\
