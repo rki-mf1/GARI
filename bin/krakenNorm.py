@@ -57,7 +57,11 @@ def get_kraken(kraken_path, tax_target, tax_host):
             
             kraken_id = kraken_output[kraken_output['TAX_ID'].isin(tax_ids)]
             length, count = kraken_id['LENGTH'].sum(), len(kraken_id)
-            perc_norm = round((length / all_length * 100), 2)
+            
+            try:
+              perc_norm = round((length / all_length * 100), 2)
+            except ZeroDivisionError:
+              perc_norm = 0.0
 
             out.write(f"{perc_norm}\tx\tx\tx\t{tax_id}\tx\n")
 

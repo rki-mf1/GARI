@@ -186,6 +186,7 @@ workflow GARI {
         threshold_file
         
     )
+    ch_versions = ch_versions.mix(KRAKEN_NORMALIZE.out.versions) 
 
     SKANI_SEARCH (
         asm_adjust2,
