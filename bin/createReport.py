@@ -12,6 +12,10 @@ def parseThresholds(inPath, species):
   if species in data: # if some specific thresholds for a given species exist overwrite the default ones
     for thresh in data[species]:
       t_hash[thresh] = data[species][thresh]
+  elif " " in species: # check if the species is really a species name if so check if genus has thresholds
+    genus = species.split(" ")[0]
+    for thresh in data[genus]:
+      t_hash[thresh] = data[genus][thresh]   
 
   return t_hash
 
@@ -23,9 +27,9 @@ def parseFASTP(fastpPath):
     data = json.load(f)
     dataHash['total'] = data['summary']['before_filtering']['total_reads']
     dataHash['past_QC_filter'] = data['summary']['after_filtering']['total_reads']
-    dataHash['past_filter_percent'] = round(float(data['summary']['after_filtering']['total_reads'])/float(data['summary']['before_filtering']['total_reads'])*100, 2)
+    dataHash['past_filter_percentage'] = round(float(data['summary']['after_filtering']['total_reads'])/float(data['summary']['before_filtering']['total_reads'])*100, 2)
     dataHash['past_filter_bps'] = data['summary']['after_filtering']['total_bases']
-    dataHash['past_filter_GC_percent'] = round(data['summary']['after_filtering']['gc_content']*100, 2) 
+    dataHash['past_filter_GC_percentage'] = round(data['summary']['after_filtering']['gc_content']*100, 2) 
     dataHash['low_quality'] = data['filtering_result']['low_quality_reads']
     dataHash['too_many_Ns'] = data['filtering_result']['too_many_N_reads']
     dataHash['too_short'] = data['filtering_result']['too_short_reads']
@@ -221,7 +225,7 @@ def checkThresholds(QCHash, refSpecies, thresh_Hash):
         flagged=True
         errorList.append("reads_tax_class_target_percentage")
     # check Kraken2 assembly
-    if QCHash["assembly"]["tax_class_target_percentage"] < float(thresh_Hash["flag_krakenTarget"]):
+    if QCHash["assembly"]["tax_class_target_percentage_normalized"] < float(thresh_Hash["flag_krakenTarget"]):
         flagged=True
         errorList.append("assembly_tax_class_target_percentage")
 
@@ -232,7 +236,7 @@ def checkThresholds(QCHash, refSpecies, thresh_Hash):
         flagged=True
         errorList.append("reads_tax_class_host_percentage")
     # check Kraken2 assembly
-    if QCHash["assembly"]["tax_class_host_percentage"] >= float(thresh_Hash["flag_krakenHost"]):
+    if QCHash["assembly"]["tax_class_host_percentage_normalized"] >= float(thresh_Hash["flag_krakenHost"]):
         flagged=True
         errorList.append("assembly_tax_class_host_percentage")
 
@@ -250,6 +254,15 @@ def checkThresholds(QCHash, refSpecies, thresh_Hash):
       errorList.append("assembly_length")
       if not thresh_Hash["fail_min_length"] <=  QCHash["assembly"]["length"] <= thresh_Hash["fail_max_length"]:
         error = True
+  
+  # 12. N50
+  if not thresh_Hash["flag_min_N50"] == "NA": # only execute if thresholds not NA
+    if QCHash["assembly"]["N50"] < thresh_Hash["flag_min_N50"]:
+      flagged=True
+      errorList.append("N50")
+      #if QCHash["assembly"]["N50"] < thresh_Hash["fail_min_N50"]:
+      #  error = True
+
 
 # Total QC warnings allowed before automatical FAIL
 #  if len(errorList) > maxFlagsAllowed:
@@ -278,6 +291,7 @@ if __name__ == '__main__':
   parser.add_argument("--s", "-stats", type=str, required=True, help="stats output")
   parser.add_argument("--kr", "-krakenread", type=str, required=False, help="kraken report for reads")
   parser.add_argument("--ka", "-krakenasm", type=str, required=True, help="kraken report for assembly")
+  parser.add_argument("--kan", "-krakenasmNorm", type=str, required=True, help="normalized kraken report for assembly")
   parser.add_argument("--p", "-fastp", type=str, required=False, help="fastp output")
   parser.add_argument("--c", "-cov", type=str, required=False, help="coverage log file of bbmap")
   parser.add_argument("--sp", "-species", type=str, required=False, help="expected species to compare to identified reference")
@@ -334,6 +348,12 @@ if __name__ == '__main__':
   dataHash["assembly"]["tax_class_target_percentage"] = kraken2_asm["kraken2_target"]
   dataHash["assembly"]["tax_class_host_percentage"] = kraken2_asm["kraken2_host"]
   dataHash["assembly"]["tax_class_unclassified_percentage"] = kraken2_asm["kraken2_unclassified"]
+
+   # kraken2 assembly normalized 
+  kraken2_asm_norm = parseKRAKEN(args.kan, thresholds["kraken2_targetID"], thresholds["kraken2_hostID"])
+  dataHash["assembly"]["tax_class_target_percentage_normalized"] = kraken2_asm_norm["kraken2_target"]
+  dataHash["assembly"]["tax_class_host_percentage_normalized"] = kraken2_asm_norm["kraken2_host"]
+  dataHash["assembly"]["tax_class_unclassified_percentage_normalized"] = kraken2_asm_norm["kraken2_unclassified"]
 
   # kraken2 read
   if args.kr:

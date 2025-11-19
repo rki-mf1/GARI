@@ -4,4 +4,4 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - bioconda::assembly-scan=1.0.0--pyhdfd78af_0
+  - bioconda::assembly-scan=1.0.0

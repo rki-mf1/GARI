@@ -55,7 +55,7 @@ nextflow pull rki-mf1/GARI
 # check the available release versions and development branches
 nextflow info rki-mf1/GARI
 # select a recent release and run
-nextflow run rki-mf1/GARI -r v1.1.1 -profile <singularity, docker, conda, mamba> -params-file params.yaml
+nextflow run rki-mf1/GARI -r v1.2.0 -profile <singularity, docker, conda, mamba> -params-file params.yaml
 ```
 
 Another option is to clone the repository and run the pipeline but we recommend using the `nextflow pull` option and stable release versions via `-r`. 
@@ -97,8 +97,10 @@ When executing the pipeline on a HPC with a queuing system you might want to lim
 | shovill_params | NO |  additional parameters to add to the SHOVILL command | string | |
 | skesa_params | NO |  additional parameters to add to the SKESA command | string | |
 | skani_params | NO |  additional parameters to add to the skani command | string | '--mode genome'  |
+| thresholds | NO |---| path to thresholds in json format used for QC assessment | 'assets/QC_thresholds.json' |
 | publish_dir_enabled | NO |---| boolean | false |
 | publish_dir_mode | NO |---| string | 'copy' |
+
 
 ### Detailed walkthrough 
 First, prepare a samplesheet with your **input** data that looks as follows, with each row representing a pair of fastq files (paired end):
@@ -177,7 +179,7 @@ GARI was originally written by Maximilian Driller.
 
 We thank the following people for their extensive assistance in the development of this pipeline:
 
-Silver A. Wolf, Torsten Houwaart, Lakshmipriya Thrukonda, Vladimir Bajić and Mustafa Helal
+Caroline Roschek, Silver A. Wolf, Torsten Houwaart, Lakshmipriya Thrukonda, Vladimir Bajić and Mustafa Helal
 
 <!-- TODO nf-core: If applicable, make list of people who have also contributed -->
 
