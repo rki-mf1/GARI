@@ -41,7 +41,7 @@ def get_kraken(kraken_path, tax_target, tax_host):
     with open(args.outputfile, 'w') as out:
 
         path=args.kraken_output
-        ncbi = ete3.NCBITaxa(dbfile='/scratch/roschekc/ncbi/taxa.sqlite')
+        ncbi = ete3.NCBITaxa(dbfile='taxa.sqlite')
 
         kraken_output = pd.read_csv(path, sep='\t', names=['STATUS', 'CONTIG_ID', 'TAX_ID', 'LENGTH', 'INFO'])
 
@@ -52,6 +52,7 @@ def get_kraken(kraken_path, tax_target, tax_host):
             
             if tax_id != 0:
                 tax_ids = ncbi.get_descendant_taxa( tax_id,  intermediate_nodes=True )
+                tax_ids.append(tax_id) # else parent id is not included
             else: 
                 tax_ids = [0]
             
