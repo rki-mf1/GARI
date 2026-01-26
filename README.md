@@ -55,7 +55,7 @@ nextflow pull rki-mf1/GARI
 # check the available release versions and development branches
 nextflow info rki-mf1/GARI
 # select a recent release and run
-nextflow run rki-mf1/GARI -r v1.2.0 -profile <singularity, docker, conda, mamba> -params-file params.yaml
+nextflow run rki-mf1/GARI -r v1.2.2 -profile <singularity, docker, conda, mamba> -params-file params.yaml
 ```
 
 Another option is to clone the repository and run the pipeline but we recommend using the `nextflow pull` option and stable release versions via `-r`. 
@@ -83,6 +83,7 @@ When executing the pipeline on a HPC with a queuing system you might want to lim
 | outdir | YES | path to output directory | string | null |
 | skani_db | YES | path to precomputed skani database to use fro reference/species verification | string | null |
 | kraken_db | NO | path to precomputed Kraken2 database to use for classification | string | null (will download and use the babykraken DB if no local DB is specified) |
+| ete3_db | NO | Path to folder where taxa.sqlite and taxa.sqlite.traverse.pkl are stored (needed for ete3). If not set it will download it in every iteration. | string | '' (will download the ncbi taxdump for each iteration) |
 | tmp_dir | NO | path to temp directory (used for some processes) | string | /tmp/ |
 | qc_mode | NO | if set to true expects assemblies as input and only performs QC | boolean | false |
 | preset | NO | predefined preset settings to use (more details below) | string | |

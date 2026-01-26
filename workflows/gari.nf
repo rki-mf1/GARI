@@ -68,6 +68,14 @@ workflow GARI {
 
     threshold_file = file(params.thresholds)
 
+    if (params.ete3_db==''){
+        //placeholder for now
+        ete3_database = ""
+    }
+    else{
+        ete3_database = params.ete3_db
+    }    
+
     //
     // SUBWORKFLOW: Read in samplesheet, validate and stage input files
     //
@@ -183,8 +191,8 @@ workflow GARI {
 
     KRAKEN_NORMALIZE (
         KRAKEN2_ASM.out.classified_reads_assignment,
-        threshold_file
-        
+        threshold_file,
+        ete3_database        
     )
     ch_versions = ch_versions.mix(KRAKEN_NORMALIZE.out.versions) 
 

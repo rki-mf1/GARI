@@ -50,6 +50,12 @@
                     "description": "Path to checkm database set up. If not set it will download it in every iteration.",
                     "fa_icon": "fas fa-folder-open"
                 },
+                "ete3_db": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Path to folder where taxa.sqlite and taxa.sqlite.traverse.pkl are stored (needed for ete3). If not set it will download it in every iteration.",
+                    "fa_icon": "fas fa-folder-open"
+                },
                 "assembler": {
                     "type": "string",
                     "default": "spades",

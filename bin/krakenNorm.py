@@ -14,6 +14,7 @@ parser = ap.ArgumentParser(description="")
 parser.add_argument("-k", "--kraken_output", type=str)
 parser.add_argument("-t", "--thresholds", type=str)
 parser.add_argument("-s", "--species", type=str)
+parser.add_argument("-d", "--taxdumpDB", type=str, required=False)
 parser.add_argument("-o", "--outputfile", type=str, default='./KRAKEN_report.txt')
 args = parser.parse_args()
 
@@ -41,7 +42,10 @@ def get_kraken(kraken_path, tax_target, tax_host):
     with open(args.outputfile, 'w') as out:
 
         path=args.kraken_output
-        ncbi = ete3.NCBITaxa(dbfile='taxa.sqlite')
+        if args.taxdumpDB:
+          ncbi = ete3.NCBITaxa(dbfile=args.taxdumpDB+"/taxa.sqlite")
+        else:
+          ncbi = ete3.NCBITaxa(dbfile="taxa.sqlite")
 
         kraken_output = pd.read_csv(path, sep='\t', names=['STATUS', 'CONTIG_ID', 'TAX_ID', 'LENGTH', 'INFO'])
 
