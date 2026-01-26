@@ -11,6 +11,7 @@ process KRAKEN_NORMALIZE {
     input: 
         tuple val(meta), path(kraken)
         file(thresholds)
+        path(ete3DB)
 
     output:
         tuple val(meta), path("${meta.id}.classifiedreads.normalized.txt"), emit: report_norm
@@ -20,11 +21,13 @@ process KRAKEN_NORMALIZE {
     task.ext.when == null || task.ext.when
     
     script:
+    def ete3_dbPath = ete3DB ? "-d $ete3DB" : ""
     """
     krakenNorm.py  \\
         -k $kraken \\
         -t $thresholds \\
         -s "${meta.species}" \\
+        $ete3_dbPath \\
         -o ${meta.id}.classifiedreads.normalized.txt
  
 
