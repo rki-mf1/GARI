@@ -14,8 +14,9 @@ def parseThresholds(inPath, species):
       t_hash[thresh] = data[species][thresh]
   elif " " in species: # check if the species is really a species name if so check if genus has thresholds
     genus = species.split(" ")[0]
-    for thresh in data[genus]:
-      t_hash[thresh] = data[genus][thresh]   
+    if genus in data:
+      for thresh in data[genus]:
+        t_hash[thresh] = data[genus][thresh]
 
   return t_hash
 
