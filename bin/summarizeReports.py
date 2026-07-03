@@ -2,7 +2,6 @@
 import argparse
 import json
 import os
-import datetime
 import pandas as pd
 
 ######################################################################################
@@ -13,10 +12,8 @@ if __name__ == '__main__':
     parser.add_argument("--p", "-prefix", type=str, help="prefix for table output")
     args = parser.parse_args()
 
-    #timeStamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-    #outfile = "GARI_QC_report_" + timeStamp + ".csv"
     outprefix = args.p.split("/")[-1]
-    outfile = outprefix + "_QC_report.csv"
+    outfile = outprefix + "_QC_report.tsv"
 
     json_list = []
 
@@ -27,7 +24,6 @@ if __name__ == '__main__':
             with open(args.g + '/' + ofile, 'rt') as f:
                 data = json.load(f)
                 
-                print(data)
                 # format floats to make sure they always show two digits --> changes them to string...
                 for val in data["assembly"]:
                     if isinstance(data["assembly"][val], float) or isinstance(data["assembly"][val], int):
@@ -38,7 +34,7 @@ if __name__ == '__main__':
                 for val in data["reference"]:
                     if isinstance(data["reference"][val], float) or isinstance(data["reference"][val], int):
                         data["reference"][val] = "{:.2f}".format(data["reference"][val])
-                print(data)
+                data["GARI"]["version"] = "v."+ data["GARI"]["version"]
 
                 json_list.append(pd.json_normalize(data))
 
@@ -46,10 +42,9 @@ if __name__ == '__main__':
     # remove the nested structure of the json and rename columns
     data_renamed = {}
     for col in df:
-        #newCol = col.split(".")[-1]
         newCol = col.replace(".", "_")
         data_renamed[col] = newCol
     df_renamed = df.rename(columns=data_renamed)
     
 
-    df_renamed.to_csv(outfile, index=False)
+    df_renamed.to_csv(outfile, index=False, sep="\t")
