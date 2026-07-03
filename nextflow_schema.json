@@ -128,6 +128,12 @@
                     "description": "Parameters to use for shovill",
                     "fa_icon": "fas fa-file-csv"
                 },
+                "skani_params": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Parameters to use for skani",
+                    "fa_icon": "fas fa-file-csv"
+                },
                 "thresholds": {
                     "type": "string",
                     "default": "assets/QC_thresholds.json",
