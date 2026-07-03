@@ -55,7 +55,7 @@ nextflow pull rki-mf1/GARI
 # check the available release versions and development branches
 nextflow info rki-mf1/GARI
 # select a recent release and run
-nextflow run rki-mf1/GARI -r v1.2.2 -profile <singularity, docker, conda, mamba> -params-file params.yaml
+nextflow run rki-mf1/GARI -r v1.3.0 -profile <singularity, docker, conda, mamba> -params-file params.yaml
 ```
 
 Another option is to clone the repository and run the pipeline but we recommend using the `nextflow pull` option and stable release versions via `-r`. 
@@ -97,7 +97,7 @@ When executing the pipeline on a HPC with a queuing system you might want to lim
 | spades_params | NO |  additional parameters to add to the SPADES command | string | '--isolate' |
 | shovill_params | NO |  additional parameters to add to the SHOVILL command | string | |
 | skesa_params | NO |  additional parameters to add to the SKESA command | string | |
-| skani_params | NO |  additional parameters to add to the skani command | string | '--mode genome'  |
+| skani_params | NO |  additional parameters to add to the skani command | string | ''  |
 | thresholds | NO |---| path to thresholds in json format used for QC assessment | 'assets/QC_thresholds.json' |
 | publish_dir_enabled | NO |---| boolean | false |
 | publish_dir_mode | NO |---| string | 'copy' |
