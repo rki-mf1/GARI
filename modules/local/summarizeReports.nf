@@ -1,10 +1,10 @@
 process CREATE_REPORT {
     label 'process_single'
 
-    conda "conda-forge::pandas=1.5.2"
+    conda "conda-forge::pandas=1.2.5 conda-forge::openpyxl"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/pandas:1.5.2' :
-        'biocontainers/pandas:1.5.2' }"
+        'library://mdriller/gari/pandas_openpyxl:latest' :
+        'library://mdriller/gari/pandas_openpyxl:latest' }"
 
     input:
       file ('*')
@@ -12,6 +12,7 @@ process CREATE_REPORT {
 
     output:
       path '*.tsv'
+      path '*.xlsx'
       path "versions.yml", emit: versions
 
     script:
