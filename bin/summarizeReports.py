@@ -54,4 +54,4 @@ if __name__ == '__main__':
     df_renamed = df.rename(columns=data_renamed) 
 
     df_renamed.to_csv(outfile, index=False, sep="\t")
-    df_renamed.to_excel(outfile_xlsx, sheet_name="GARI_QC")
+    df_renamed.to_excel(outfile_xlsx, index=False, sheet_name="GARI_QC")
