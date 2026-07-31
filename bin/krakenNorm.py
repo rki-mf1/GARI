@@ -11,11 +11,9 @@ import ete3
 
 ### INPUT ###
 parser = ap.ArgumentParser(description="")
-parser.add_argument("-k", "--kraken_output", type=str)
 parser.add_argument("-t", "--thresholds", type=str)
-parser.add_argument("-s", "--species", type=str)
+parser.add_argument("-s", "--samplesheet", type=str)
 parser.add_argument("-d", "--taxdumpDB", type=str, required=False)
-parser.add_argument("-o", "--outputfile", type=str, default='./KRAKEN_report.txt')
 args = parser.parse_args()
 
 #### GET KRAKEN OUTPUT
@@ -38,17 +36,16 @@ def parseThresholds(inPath, species):
   return t_hash
 
 
-def get_kraken(kraken_path, tax_target, tax_host):
+def get_kraken(sampleID, kraken_path, tax_target, tax_host):
 
-    with open(args.outputfile, 'w') as out:
+    with open(sampleID + ".classifiedreads.normalized.txt", 'w') as out:
 
-        path=args.kraken_output
         if args.taxdumpDB:
           ncbi = ete3.NCBITaxa(dbfile=args.taxdumpDB+"/taxa.sqlite")
         else:
           ncbi = ete3.NCBITaxa(dbfile="taxa.sqlite")
 
-        kraken_output = pd.read_csv(path, sep='\t', names=['STATUS', 'CONTIG_ID', 'TAX_ID', 'LENGTH', 'INFO'])
+        kraken_output = pd.read_csv(kraken_path, sep='\t', names=['STATUS', 'CONTIG_ID', 'TAX_ID', 'LENGTH', 'INFO'])
 
         all_length = kraken_output['LENGTH'].sum()
         all_count = len(kraken_output)
@@ -72,10 +69,9 @@ def get_kraken(kraken_path, tax_target, tax_host):
             out.write(f"{perc_norm}\tx\tx\tx\t{tax_id}\tx\n")
 
 
-dataHash={}
-
-thresholds = parseThresholds(args.thresholds, args.species)
-get_kraken(args.kraken_output, thresholds["kraken2_targetID"], thresholds["kraken2_hostID"])
-
-
-
+samplesheetIn = pd.read_csv(args.samplesheet, sep=',', header=0)
+for i, row in samplesheetIn.iterrows():
+  print(row)
+  dataHash={}
+  thresholds = parseThresholds(args.thresholds, row["species"])
+  get_kraken(row["sample"], row["kraken2"], thresholds["kraken2_targetID"], thresholds["kraken2_hostID"])
