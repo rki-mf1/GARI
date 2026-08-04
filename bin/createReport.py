@@ -14,8 +14,9 @@ def parseThresholds(inPath, species):
       t_hash[thresh] = data[species][thresh]
   elif " " in species: # check if the species is really a species name if so check if genus has thresholds
     genus = species.split(" ")[0]
-    for thresh in data[genus]:
-      t_hash[thresh] = data[genus][thresh]   
+    if genus in data:
+      for thresh in data[genus]:
+        t_hash[thresh] = data[genus][thresh]
 
   return t_hash
 
@@ -135,9 +136,10 @@ def parseKRAKEN(krakenPath, t_ID_tar, t_ID_host):
   return(krakenHash)
 
 
-def parseCoverage(covPath):
+def parseBBMap(covPath):
   avgCov="NA"
   percMapped="NA"
+  stdDev="NA"
 
   with open(covPath, 'rt') as f:
     for line in f:
@@ -145,8 +147,10 @@ def parseCoverage(covPath):
         percMapped=round(float(line.rstrip().split(":")[1].rstrip(" ").lstrip(" ")), 2)
       elif line.startswith("Average coverage:"):
         avgCov=round(float(line.rstrip().split(":")[1].rstrip(" ").lstrip(" ")), 2)
+      elif line.startswith("Standard deviation:"):
+        stdDev=round(float(line.rstrip().split(":")[1].rstrip(" ").lstrip(" ")), 2)
 
-  return(avgCov, percMapped)
+  return(avgCov, percMapped, stdDev)
 
 
 # function to check the QC values
@@ -369,11 +373,13 @@ if __name__ == '__main__':
   #####################################################################################
   # 1) Coverage and percentage mapped reads
   if args.c:
-    avgCov, percMapped = parseCoverage(args.c)
+    avgCov, percMapped, covStd = parseBBMap(args.c)
     dataHash["assembly"]["average_coverage"] = avgCov
+    dataHash["assembly"]["coverage_standard_deviation"] = covStd
     dataHash["reads"]["mapped_asm_percentage"] = percMapped
   else:
     dataHash["assembly"]["average_coverage"] = 'NA'
+    dataHash["assembly"]["coverage_standard_deviation"] = 'NA'
     dataHash["reads"]["mapped_asm_percentage"] = 'NA'
 
 ######################################################################################

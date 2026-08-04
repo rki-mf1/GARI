@@ -189,12 +189,30 @@ workflow GARI {
     )
     ch_versions = ch_versions.mix(KRAKEN2_ASM.out.versions)
 
+    normalize_input = KRAKEN2_ASM.out.classified_reads_assignment
+    .toList()
+    .map { tuples ->
+        def metas  = tuples.collect { t -> t[0] }
+        def files  = tuples.collect { t -> t[1] }
+        [metas, files]
+    }
+
     KRAKEN_NORMALIZE (
-        KRAKEN2_ASM.out.classified_reads_assignment,
+        normalize_input,
         threshold_file,
         ete3_database        
     )
     ch_versions = ch_versions.mix(KRAKEN_NORMALIZE.out.versions) 
+
+    ch_kraken_normalize_per_sample = KRAKEN_NORMALIZE.out.report_norm
+        .flatMap { metas, files ->
+            def meta_list = metas instanceof List ? metas : [metas]
+            def file_list = files instanceof List ? files : [files]
+            file_list.collect { f ->
+                def matched_meta = meta_list.find { meta -> f.name.startsWith(meta.id) }
+                [matched_meta, f]
+        }
+    }
 
     SKANI_SEARCH (
         asm_adjust2,
@@ -215,7 +233,7 @@ workflow GARI {
         fastp_ch = FASTP.out.json.map{[ [id: it[0].id, single_end:false, species: it[0].species], it[1] ] }
         krakenR_ch = KRAKEN2_READ.out.report.map{[ [id: it[0].id, single_end:false, species: it[0].species], it[1]] }
         krakenA_ch = KRAKEN2_ASM.out.report.map{[ [id: it[0].id.minus("-ASM"), single_end:false, species: it[0].species], it[1]] }
-        krakenA_norm_ch = KRAKEN_NORMALIZE.out.report_norm.map{[ [id: it[0].id.minus("-ASM"), single_end:false, species: it[0].species], it[1]] }
+        krakenA_norm_ch = ch_kraken_normalize_per_sample.map{[ [id: it[0].id.minus("-ASM"), single_end:false, species: it[0].species], it[1]] }
         bbmap_ch = BBMAP_ALIGN.out.log.map{[ [id: it[0].id, single_end:false, species: it[0].species], it[1]] }
         checkm_ch = CHECKM_LINEAGEWF.out.checkm_tsv.map{[ [id: it[0].id, single_end:false, species: it[0].species], it[1]] }
 
@@ -240,7 +258,7 @@ workflow GARI {
         skani_ch = SKANI_SEARCH.out.search.map{[ [id: it[0].id, single_end:true, species: it[0].species], it[1] ] }
         asmscan_ch = ASSEMBLYSCAN.out.json.map{[ [id: it[0].id, single_end:true, species: it[0].species], it[1]] }
         krakenA_ch = KRAKEN2_ASM.out.report.map{[ [id: it[0].id.minus("-ASM"), single_end:true, species: it[0].species], it[1]] }
-        krakenA_ch_norm = KRAKEN_NORMALIZE.out.report_norm.map{[ [id: it[0].id.minus("-ASM"), single_end:true, species: it[0].species], it[1]] }
+        krakenA_ch_norm = ch_kraken_normalize_per_sample.map{[ [id: it[0].id.minus("-ASM"), single_end:true, species: it[0].species], it[1]] }
         checkm_ch = CHECKM_LINEAGEWF.out.checkm_tsv.map{[ [id: it[0].id, single_end:true, species: it[0].species], it[1]] }
 
         concat_ch = asm.join(skani_ch).join(asmscan_ch).join(krakenA_ch).join(krakenA_ch_norm).join(checkm_ch)

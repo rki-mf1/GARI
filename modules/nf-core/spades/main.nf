@@ -2,10 +2,10 @@ process SPADES {
     tag "$meta.id"
     label 'process_high'
 
-    conda "bioconda::spades=4.2.0"
+    conda "bioconda::spades=4.3.0"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/spades:4.2.0--h8d6e82b_1' :
-        'biocontainers/spades:4.2.0--h8d6e82b_1' }"
+        'https://depot.galaxyproject.org/singularity/spades:4.3.0--hde4eca7_0' :
+        'biocontainers/spades:4.3.0--hde4eca7_0' }"
 
     input:
     tuple val(meta), path(illumina), path(pacbio), path(nanopore)
