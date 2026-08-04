@@ -180,7 +180,7 @@ GARI was originally written by Maximilian Driller.
 
 We thank the following people for their extensive assistance in the development of this pipeline:
 
-Marie Lataret, Caroline Roschek, Silver A. Wolf, Torsten Houwaart, Lakshmipriya Thrukonda, Vladimir Bajić and Mustafa Helal
+Caroline Roschek, Marie Lataretu, Silver A. Wolf, Torsten Houwaart, Lakshmipriya Thrukonda, Vladimir Bajić and Mustafa Helal
 
 <!-- TODO nf-core: If applicable, make list of people who have also contributed -->
 
