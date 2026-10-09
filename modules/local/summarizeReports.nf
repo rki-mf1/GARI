@@ -11,9 +11,9 @@ process CREATE_REPORT {
       path outdir
 
     output:
-      path '*.tsv'
-      path '*.xlsx'
-      path "versions.yml", emit: versions
+      path '*.tsv'        , emit: tsv
+      path '*.xlsx'       , emit: xlxs
+      path "versions.yml" , emit: versions
 
     script:
     """
