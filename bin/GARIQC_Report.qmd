@@ -1,0 +1,1292 @@
+---
+title: "[`r params$report_title`]{.underline}"
+author: "`r params$report_author`"
+date: today
+params:
+  qc_file: "data/GARI_QC_Report.tsv"
+  report_author: ""
+  report_title: "GARI QC Report"
+execute:
+  echo: false
+  warning: false
+  message: false
+format:
+  html:
+    toc: true
+    toc-location: left
+    code-fold: true
+    theme: default
+    grid:
+      body-width: 1400px
+    embed-resources: true
+crossref:
+  tbl-prefix: ""
+  tbl-title: ""
+title-block-banner: "#022542"
+title-block-banner-color: "#e6e4e9"
+---
+
+```{r}
+#| label: load-qc
+#| echo: false
+#| message: false
+#| error: false
+#| warning: false
+#| include: false
+
+suppressWarnings(suppressMessages(suppressPackageStartupMessages({
+  library(htmltools)
+  library(knitr)
+  library(kableExtra)
+  library(plotly)
+  library(dplyr)
+  library(tidyr)
+  library(DT)
+})))
+
+# ---- load data ---------------------------------------------------------------
+# Fail with an informative message rather than a raw read.delim() error if the
+# TSV path (set here, or overridden by Nextflow via -P qc_file:<path>) doesn't
+# resolve to an actual file.
+if (!file.exists(params$qc_file)) {
+  stop(sprintf(
+    "GARI QC report: input file not found at '%s'. Check the qc_file parameter.",
+    params$qc_file
+  ))
+}
+qc <- read.delim(params$qc_file)
+
+# ---- NA / NULL / blank cleanup ------------------------------------------
+qc$GARI_QC_warnings <- ifelse(is.na(qc$GARI_QC_warnings), "", qc$GARI_QC_warnings)
+
+qc$reference_species <- ifelse(
+  is.na(qc$reference_species) | qc$reference_species == "",
+  "Unknown", qc$reference_species
+)
+
+# Fixed-level factor: table()/count() always report every status, including
+# zero, so nothing downstream errors when a run has e.g. no FAILED samples.
+qc$GARI_QC_status <- factor(
+  ifelse(is.na(qc$GARI_QC_status) | qc$GARI_QC_status == "", "UNKNOWN", qc$GARI_QC_status),
+  levels = c("PASSED", "FLAGGED", "FAILED", "UNKNOWN")
+)
+if (!"UNKNOWN" %in% qc$GARI_QC_status) qc$GARI_QC_status <- droplevels(qc$GARI_QC_status)
+
+# ---- shared palettes: Paul Tol's colorblind-safe schemes -----------------
+# Shared colors keep QC statuses and species consistent across all charts.
+
+
+qc_status_pal_full <- c(PASSED = "#0E9E6E", FLAGGED = "#E8A33D",
+                         FAILED = "#D1495B", UNKNOWN = "#999999")
+qc_status_pal <- qc_status_pal_full[levels(qc$GARI_QC_status)]
+# Use the same status colors in every report component.
+
+tol_muted <- c("#CC6677", "#332288", "#DDCC77", "#117733", "#88CCEE",
+               "#882255", "#44AA99", "#999933", "#AA4499")
+tol_light <- c("#77AADD", "#99DDFF", "#44BB99", "#BBCC33", "#AAAA00",
+               "#EEDD88", "#EE8866", "#FFAABB", "#DDDDDD")
+tol_species_base <- c(tol_muted, tol_light)
+
+taxon_levels <- sort(unique(qc$reference_species))
+n_species <- length(taxon_levels)
+species_colors <- if (n_species <= length(tol_species_base)) {
+  tol_species_base[seq_len(n_species)]
+} else {
+  colorRampPalette(tol_species_base)(n_species)
+}
+taxon_pal <- setNames(species_colors, taxon_levels)
+
+spp_pal <- taxon_pal
+
+# ---- shared helpers -------------------------------------------------------
+
+get_unique <- function(x) {
+  # Return a readable value for metadata columns with missing or repeated values.
+  x <- x[!is.na(x) & x != ""]
+  u <- unique(x)
+  if (length(u) == 0) "N/A" else if (length(u) > 1) paste(u, collapse = ", ") else u
+}
+
+# ---------------------------------------------------------------------------
+# not_available_plot() — placeholder shown in place of a chart when the
+# requested column is entirely NA for every sample (e.g. read-level metrics
+# in a "QC mode" run that skips raw-read processing). Prevents a silently
+# blank chart from being mistaken for "zero" or "not measured well".
+# ---------------------------------------------------------------------------
+# Display an explanatory placeholder when a metric is unavailable.
+not_available_plot <- function(column_label) {
+  plotly_empty(type = "scatter", mode = "markers") |>
+    layout(
+      title = list(
+        text = paste0(column_label, " is not available for this pipeline run"),
+        font = list(size = 14)
+      ),
+      xaxis = list(visible = FALSE),
+      yaxis = list(visible = FALSE)
+    )
+}
+
+is_all_na <- function(x) all(is.na(x))
+
+
+# ---------------------------------------------------------------------------
+# box_plot() — one boxplot (with all points) for ANY numeric column, grouped
+# on the x-axis.
+# ---------------------------------------------------------------------------
+# Reusable boxplot helper for numeric QC metrics grouped by status or species.
+box_plot <- function(data, y_var, colour_by, palette,
+                      y_title = y_var, group_by = "reference_species",
+                      extra_hover_col = NULL, extra_hover_label = NULL,
+                      show_legend = TRUE) {
+
+  if (is_all_na(data[[y_var]])) return(not_available_plot(y_title))
+
+  hover_text <- paste0("Sample: ", data$sample_ID,
+                       "<br>Species: ", data$reference_species,
+                       "<br>QC status: ", data$GARI_QC_status,
+                       "<br>QC warnings: ", ifelse(data$GARI_QC_warnings == "", "none", data$GARI_QC_warnings),
+                       "<br>", y_title, ": ", data[[y_var]])
+  if (!is.null(extra_hover_col)) {
+    hover_text <- paste0(hover_text, "<br>", extra_hover_label, ": ", data[[extra_hover_col]])
+  }
+
+  plot_ly(
+    data,
+    x = data[[group_by]],
+    y = data[[y_var]],
+    color = data[[colour_by]],
+    colors = palette,
+    type = "box",
+    boxpoints = "all", jitter = 0.4, pointpos = 0,
+    marker = list(size = 5, opacity = 0.6),
+    hoverinfo = "text",
+    text = hover_text
+  ) |>
+    layout(
+      showlegend = show_legend,
+      boxmode = "group",
+      xaxis = list(title = "", tickangle = -30),
+      yaxis = list(title = y_title),
+      legend = list(orientation = "h", x = 0.5, xanchor = "center", y = -0.25),
+      margin = list(b = 120)
+    )
+}
+
+
+#| label: marginal-plot-simplified
+#| echo: false
+#| eval: false
+
+
+# Create a scatter plot with marginal distributions for two QC metrics.
+marginal_plot <- function(data, x_var, y_var, colour_by, palette,
+                           x_title = x_var, y_title = y_var,
+                           legend_side = c("bottom", "right")) {
+
+  legend_side <- match.arg(legend_side)
+
+  # QC-mode guard: reads_tax_class_*_percentage is entirely NA when the
+  # pipeline skips raw-read processing. Without this check, plotly silently
+  # drops every point and renders a broken/empty-looking axis instead of a
+  # clear "not available" message.
+  if (all(is.na(data[[x_var]])) || all(is.na(data[[y_var]]))) {
+    return(not_available_plot(paste0(x_title, " / ", y_title)))
+  }
+
+  cvar <- data[[colour_by]]
+  xv   <- data[[x_var]]
+  yv   <- data[[y_var]]
+
+  tip <- paste0("Sample: ", data$sample_ID,
+                "<br>Species: ", data$reference_species,
+                "<br>Status: ", data$GARI_QC_status,
+                "<br>QC warnings: ", ifelse(data$GARI_QC_warnings == "", "none", data$GARI_QC_warnings),
+                "<br>", x_title, ": ", xv,
+                "<br>", y_title, ": ", yv)
+
+  ax_x <- list(title = x_title, showgrid = TRUE, gridcolor = "#ECECEC",
+               zeroline = FALSE, ticks = "outside")
+  ax_y <- list(title = y_title, showgrid = TRUE, gridcolor = "#ECECEC",
+               zeroline = FALSE, ticks = "outside")
+  ax_n <- list(title = "", showticklabels = FALSE, showgrid = FALSE, zeroline = FALSE)
+
+  scat <- plot_ly(data, type = "scatter", mode = "markers", x = xv, y = yv,
+                  color = cvar, colors = palette, legendgroup = cvar,
+                  marker = list(size = 7, opacity = 0.8,
+                                line = list(width = 0.6, color = "white")),
+                  hoverinfo = "text", text = tip) |>
+    layout(xaxis = ax_x, yaxis = ax_y)
+
+  top <- plot_ly(data, type = "histogram", x = xv,
+                 color = cvar, colors = palette, legendgroup = cvar,
+                 showlegend = FALSE, nbinsx = 50,
+                 hovertemplate = paste0("<b>%{fullData.name}</b><br>",
+                                        x_title, ": %{x}<br>n = %{y}<extra></extra>")) |>
+    layout(xaxis = ax_x, yaxis = ax_n)
+
+  right <- plot_ly(data, type = "histogram", y = yv,
+                   color = cvar, colors = palette, legendgroup = cvar,
+                   showlegend = FALSE, nbinsy = 40,
+                   hovertemplate = paste0("<b>%{fullData.name}</b><br>",
+                                          y_title, ": %{y}<br>n = %{x}<extra></extra>")) |>
+    layout(xaxis = ax_n, yaxis = ax_y)
+
+  if (legend_side == "bottom") {
+    legend_cfg <- list(orientation = "h", x = 0.5, xanchor = "center",
+                       y = -0.14, yanchor = "top",
+                       font = list(size = 11), itemsizing = "constant")
+    margins <- list(t = 20, r = 20, b = 120, l = 60)
+  } else {
+    legend_cfg <- list(orientation = "v", x = 1.02, xanchor = "left",
+                       y = 1, yanchor = "top",
+                       font = list(size = 10), itemsizing = "constant")
+    margins <- list(t = 20, r = 200, b = 60, l = 60)
+  }
+
+  subplot(top, plotly_empty(type = "scatter", mode = "markers"), scat, right,
+          nrows = 2, heights = c(0.16, 0.84), widths = c(0.86, 0.14),
+          shareX = TRUE, shareY = TRUE, titleX = TRUE, titleY = TRUE, margin = 0.015) |>
+    layout(
+      barmode = "stack", bargap = 0.04, plot_bgcolor = "white",
+      legend = legend_cfg,
+      margin = margins
+    )
+}
+# ---------------------------------------------------------------------------
+# reasons_plot() — flagged/failed warning-reason breakdown, with per-reason
+# sample lists on hover and count labels on the bars (with empty guard).
+# ---------------------------------------------------------------------------
+# Summarize and visualize warning reasons for a selected QC status.
+reasons_plot <- function(data, status) {
+
+  subset_df <- data[data$GARI_QC_status == status & data$GARI_QC_warnings != "",
+                     c("sample_ID", "GARI_QC_warnings")]
+
+  if (nrow(subset_df) == 0) {
+    return(
+      plotly_empty(type = "scatter", mode = "markers") |>
+        layout(title = list(text = paste0("No ", status, " samples with recorded reasons"),
+                            font = list(size = 14)),
+               xaxis = list(visible = FALSE), yaxis = list(visible = FALSE))
+    )
+  }
+
+  exploded <- tidyr::separate_rows(subset_df, GARI_QC_warnings, sep = "\\|")
+
+  reasons_df <- exploded |>
+    dplyr::group_by(reason = GARI_QC_warnings) |>
+    dplyr::summarise(
+      count   = dplyr::n(),
+      samples = paste(sample_ID, collapse = ", "),
+      .groups = "drop"
+    ) |>
+    dplyr::mutate(pct = round(100 * count / nrow(subset_df), 1)) |>
+    dplyr::arrange(count)
+
+  reasons_df$samples_display <- ifelse(
+    lengths(strsplit(reasons_df$samples, ", ")) > 8,
+    paste0(sapply(strsplit(reasons_df$samples, ", "), function(s) paste(head(s, 8), collapse = ", ")),
+           ", +", lengths(strsplit(reasons_df$samples, ", ")) - 8, " more"),
+    reasons_df$samples
+  )
+
+  base_color <- qc_status_pal_full[[status]]
+
+  plot_ly(
+    reasons_df,
+    x = ~count,
+    y = ~reorder(reason, count),
+    type = "bar",
+    orientation = "h",
+    marker = list(
+      color = ~count,
+      colorscale = list(c(0, "#FCE9C9"), c(1, base_color)),
+      showscale = FALSE,
+      line = list(color = "white", width = 0.5)
+    ),
+    text = ~paste0(count),
+    textposition = "outside",
+    textfont = list(size = 11, family = "Consolas, monospace"),
+    hovertext = ~paste0("<b>", reason, "</b><br>",
+                        count, " samples (", pct, "% of ", status, ")<br>",
+                        samples_display),
+    hoverinfo = "text"
+  ) |>
+    layout(
+      xaxis = list(title = "Number of samples", range = c(0, max(reasons_df$count) * 1.15)),
+      yaxis = list(title = ""),
+      margin = list(l = 220, r = 20),
+      font = list(family = "Consolas, monospace")
+    )
+}
+
+
+# ---------------------------------------------------------------------------
+# ref_status_pct_plot() — one row per species, bars colored by QC status,
+# each bar normalized to 100% so segment width shows that status's share of
+# the species' total samples.
+# ---------------------------------------------------------------------------
+# Show the percentage of each species in every QC-status category.
+ref_status_pct_plot <- function(data, palette) {
+
+  df <- data |>
+    dplyr::count(reference_species, GARI_QC_status, .drop = FALSE) |>
+    dplyr::group_by(reference_species) |>
+    dplyr::mutate(
+      total = sum(n),
+      pct   = ifelse(total > 0, round(100 * n / total, 1), 0)
+    ) |>
+    dplyr::ungroup()
+
+  spp_order <- data |>
+    dplyr::count(reference_species, sort = TRUE) |>
+    dplyr::arrange(n) |>
+    dplyr::pull(reference_species)
+
+  plot_ly(
+    df,
+    y = ~factor(reference_species, levels = spp_order),
+    x = ~pct,
+    color = ~GARI_QC_status,
+    colors = palette,
+    type = "bar",
+    orientation = "h",
+    marker = list(line = list(color = "white", width = 0.3)),
+    hovertemplate = ~paste0(
+      "<b>", reference_species, "</b><br>",
+      GARI_QC_status, ": ", pct, "% (n=", n, "/", total, ")<extra></extra>"
+    )
+  ) |>
+    layout(
+      barmode = "stack", bargap = 0.1,
+      xaxis = list(title = "Percentage of samples (%)", range = c(0, 100)),
+      yaxis = list(title = ""),
+      legend = list(orientation = "v", x = 1.02, xanchor = "left",
+                    y = 1, yanchor = "top", font = list(size = 10)),
+      font = list(family = "Consolas, monospace"),
+      margin = list(l = 180, r = 200)
+    )
+}
+
+# ---------------------------------------------------------------------------
+# ref_status_heatmap() — species x status grid, cell color = % of that
+# species' samples in that status.
+# ---------------------------------------------------------------------------
+# Create a species-by-status heatmap using within-species percentages.
+ref_status_heatmap <- function(data, status_levels) {
+
+  df <- data |>
+    dplyr::count(reference_species, GARI_QC_status, .drop = FALSE) |>
+    dplyr::group_by(reference_species) |>
+    dplyr::mutate(
+      total = sum(n),
+      pct   = ifelse(total > 0, round(100 * n / total, 1), 0)
+    ) |>
+    dplyr::ungroup()
+
+  spp_order <- data |>
+    dplyr::count(reference_species, sort = TRUE) |>
+    dplyr::arrange(n) |>
+    dplyr::pull(reference_species)
+
+  mat <- df |>
+    dplyr::select(reference_species, GARI_QC_status, pct) |>
+    tidyr::pivot_wider(names_from = GARI_QC_status, values_from = pct, values_fill = 0) |>
+    dplyr::mutate(reference_species = factor(reference_species, levels = spp_order)) |>
+    dplyr::arrange(reference_species)
+
+  z_matrix <- as.matrix(mat[, status_levels])
+
+  n_matrix <- df |>
+    dplyr::select(reference_species, GARI_QC_status, n) |>
+    tidyr::pivot_wider(names_from = GARI_QC_status, values_from = n, values_fill = 0) |>
+    dplyr::mutate(reference_species = factor(reference_species, levels = spp_order)) |>
+    dplyr::arrange(reference_species)
+  n_only <- as.matrix(n_matrix[, status_levels])
+
+  plot_ly(
+    x = status_levels,
+    y = mat$reference_species,
+    z = z_matrix,
+    type = "heatmap",
+    colorscale = list(c(0, "#F5F0E6"), c(1, qc_status_pal_full[["PASSED"]])),
+    zmin = 0, zmax = 100,
+    text = n_only,
+    hovertemplate = paste0(
+      "<b>%{y}</b><br>%{x}: %{z}%%<br>n = %{text}<extra></extra>"
+    ),
+    xgap = 3, ygap = 3
+  ) |>
+    layout(
+      xaxis = list(title = "", side = "top"),
+      yaxis = list(title = "", tickfont = list(size = 11)),
+      margin = list(l = 200, t = 60, b = 20)
+    )
+}
+
+
+```
+
+```{r}
+#| label: back-to-top-button
+#| echo: false
+#| results: asis
+
+cat('
+<style>
+#back-to-top-btn {
+  position: fixed; bottom: 38px; right: 38px; z-index: 900;
+  width: 52px; height: 52px; border-radius: 60%;
+  background: #2b2d35; color: white; border: none;
+  font-family: Consolas, monospace; font-size: 18px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 3px 10px rgba(240, 240, 240, 0.81);
+  cursor: pointer; opacity: 0; pointer-events: none;
+  transition: opacity 0.2s, transform 0.15s;
+}
+#back-to-top-btn.visible { opacity: 0.9; pointer-events: auto; }
+#back-to-top-btn:hover { opacity: 1; transform: translateY(-2px); background: #0B8560; }
+</style>
+<button id="back-to-top-btn" type="button" aria-label="Back to top">&uarr;</button>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var btn = document.getElementById("back-to-top-btn");
+  if (!btn) return;
+
+  window.addEventListener("scroll", function () {
+    btn.classList.toggle("visible", window.scrollY > 400);
+  });
+
+  btn.addEventListener("click", function () {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+});
+</script>
+')
+```
+
+## [General overview]{.underline}
+
+::::: panel-tabset
+### QC overall
+
+This report summarizes the results of quality control assessment performed by the GARI pipeline. Each assembled genome is evaluated against a panel of assembly-quality, taxonomic-purity, and reference-concordance metrics, and classified as PASSED, FLAGGED, or FAILED accordingly.
+
+```{r}
+#| label: general-overview-with-pie
+#| echo: false
+#| message: false
+
+# Calculate the headline sample counts used in the overview panel.
+n_total   <- nrow(qc)
+n_passed  <- sum(qc$GARI_QC_status == "PASSED")
+n_flagged <- sum(qc$GARI_QC_status == "FLAGGED")
+n_failed  <- sum(qc$GARI_QC_status == "FAILED")
+
+col_black <- "#111111"
+col_pass  <- qc_status_pal_full[["PASSED"]]
+col_flag  <- qc_status_pal_full[["FLAGGED"]]
+col_fail  <- qc_status_pal_full[["FAILED"]]
+
+# Generate one styled summary row for the overview card.
+stat_row <- function(label, value, bg, fg = "white") {
+  div(
+    style = paste0("display:flex; align-items:center; justify-content:space-between;
+                     background:", bg, "; color:", fg, "; padding:10px 14px;
+                     border-radius:4px; margin-bottom:6px;"),
+    tags$b(label, style = "font-size:13px;"),
+    tags$span(value, style = "font-size:18px; font-weight:bold;")
+  )
+}
+
+summary_block <- div(
+  style = "width:260px; flex-shrink:0; font-family:monospace;",
+  stat_row("Total samples:", n_total, col_black),
+  stat_row("QC PASSED:",  n_passed,  col_pass),
+  stat_row("QC FLAGGED:", n_flagged, col_flag),
+  stat_row("QC FAILED:",  n_failed,  col_fail)
+)
+
+# Count samples by QC status for the pie chart.
+status_tab <- table(qc$GARI_QC_status)
+status_summary <- data.frame(GARI_QC_status = names(status_tab), n = as.integer(status_tab))
+status_summary$pct <- round(100 * status_summary$n / sum(status_summary$n), 1)
+status_summary <- status_summary[status_summary$n > 0, ]
+
+pie <- plot_ly(status_summary, labels = ~GARI_QC_status, values = ~n, type = "pie",
+        marker = list(colors = qc_status_pal_full[status_summary$GARI_QC_status],
+                      line = list(color = "#FFFFFF", width = 2)),
+        textinfo = "label+percent",
+        hovertemplate = ~paste0("<b>", GARI_QC_status, "</b><br>n = ", n, "<br>", pct, "%<extra></extra>")) |>
+  layout(showlegend = FALSE,
+         margin = list(t = 10, b = 30))
+
+div(
+  style = "display:flex; align-items:flex-start; gap:24px; border:1px solid #ddd; padding:16px; border-radius:6px;",
+  summary_block,
+  div(style = "flex:1; min-width:0;", pie)
+)
+```
+
+#### QC report
+
+Below is a breakdown of the different reasons for an assembly was FLAGGED or FAILED for. Each reason is counted separately so samples flagged/failed for multiple reasons will appear multiple times.
+
+::: panel-tabset
+## FLAGGED
+
+`r sum(qc$GARI_QC_status == "FLAGGED")` out of `r nrow(qc)` samples were flagged, for the following reasons:
+
+```{r}
+#| fig-width: 9
+#| fig-height: 6
+reasons_plot(qc, "FLAGGED")
+```
+
+## FAILED
+
+`r sum(qc$GARI_QC_status == "FAILED")` out of `r nrow(qc)` samples were failed, with the following flags:
+
+```{r}
+#| fig-width: 9
+#| fig-height: 6
+reasons_plot(qc, "FAILED")
+```
+:::
+
+### QC by reference species
+
+The following statistics describe each assembly's relationship to its matched reference genome, identified via [skani](https://github.com/bluenote-1577/skani) as the sequence with the highest average nucleotide identity to the assembly.
+
+##### Reference table
+
+```{r}
+#| label: reference
+#| echo: false
+#| message: false
+
+# Preserve all QC-status levels, including categories with zero samples.
+status_levels_ref <- levels(qc$GARI_QC_status)
+
+ref_table <- qc |>
+  count(reference_species, GARI_QC_status, .drop = FALSE) |>
+  pivot_wider(names_from = GARI_QC_status, values_from = n, values_fill = 0)
+
+for (lvl in status_levels_ref) if (!lvl %in% names(ref_table)) ref_table[[lvl]] <- 0
+
+ref_table <- ref_table |>
+  mutate(total = rowSums(across(all_of(status_levels_ref)))) |>
+  arrange(desc(total)) |>
+  select(reference_species, total, all_of(status_levels_ref))
+
+cell_border <- "border-right:1px solid #ddd; border-bottom:1px solid #ddd;"
+
+header_cells <- tagList(
+  tags$th("Reference species",
+          style = paste0("background:#111111; color:white; padding:8px 12px; text-align:center; ", cell_border)),
+  tags$th("total",
+          style = paste0("background:#111111; color:white; padding:8px 12px; text-align:center; ", cell_border)),
+  lapply(seq_along(status_levels_ref), function(i) {
+    s <- status_levels_ref[i]
+    is_last <- i == length(status_levels_ref)
+    tags$th(s, style = paste0(
+      "background:", qc_status_pal_full[[s]], "; color:white; padding:8px 12px; text-align:center; ",
+      if (is_last) "border-bottom:1px solid #ddd;" else cell_border
+    ))
+  })
+)
+
+body_rows <- lapply(seq_len(nrow(ref_table)), function(i) {
+  row <- ref_table[i, ]
+  bg <- if (i %% 2 == 0) "#f7f7f7" else "#ffffff"
+  tags$tr(
+    style = paste0("background:", bg, ";"),
+    tags$td(row$reference_species, style = paste0("padding:7px 12px; font-weight:bold; ", cell_border)),
+    tags$td(row$total, style = paste0("padding:7px 12px; text-align:center; ", cell_border)),
+    lapply(seq_along(status_levels_ref), function(j) {
+      s <- status_levels_ref[j]
+      is_last <- j == length(status_levels_ref)
+      tags$td(row[[s]], style = paste0(
+        "padding:7px 12px; text-align:center; color:", qc_status_pal_full[[s]], "; font-weight:bold; ",
+        if (is_last) "border-bottom:1px solid #ddd;" else cell_border
+      ))
+    })
+  )
+})
+
+tags$table(
+  style = "width:100%; border-collapse:collapse; font-family:Consolas, monospace;
+           font-size:13.5px; border:1px solid #ddd;",
+  tags$thead(tags$tr(header_cells)),
+  tags$tbody(body_rows)
+)
+```
+
+#### Reference species
+
+::: panel-tabset
+## Percentage bars
+
+```{r}
+#| fig-width: 9
+#| fig-height: 6
+ref_status_pct_plot(qc, qc_status_pal)
+```
+
+## Heatmap
+
+```{r}
+#| fig-width: 9
+#| fig-height: 6
+ref_status_heatmap(qc, status_levels = levels(qc$GARI_QC_status))
+```
+:::
+:::::
+
+## [QC table]{.underline}
+
+::: panel-tabset
+## Detailed table
+
+```{r}
+#| label: qc-full-table
+#| echo: false
+#| message: false
+
+
+
+tbl <- datatable(
+  qc,
+  filter = "top",
+  class = "compact stripe hover",
+  width = "100%",
+  extensions = "FixedColumns",
+  options = list(
+    pageLength = 100,
+    scrollX = TRUE,
+    scrollY = "500px",
+    scrollCollapse = TRUE,
+    fixedColumns = list(leftColumns = 2)
+  )
+) |>
+  formatStyle("GARI_QC_status",
+              backgroundColor = styleEqual(levels(qc$GARI_QC_status), qc_status_pal)) |>
+  formatStyle(columns = names(qc), fontSize = "85%")
+
+numeric_cols <- names(qc)[sapply(qc, is.numeric)]
+
+for (col in numeric_cols) {
+  tbl <- tbl |> formatStyle(
+    col,
+    background = styleColorBar(qc[[col]], "#a9c9ec"),
+    backgroundSize = "100% 90%",
+    backgroundRepeat = "no-repeat",
+    backgroundPosition = "left"
+  )
+}
+
+tbl
+```
+
+## Customizable table
+
+```{r}
+#| label: qc-full-table3
+#| echo: false
+#| message: false
+
+# Pass the status-column index and table metadata to JavaScript.
+status_col_idx <- which(names(qc) == "GARI_QC_status") - 1
+status_levels_for_toggle <- levels(qc$GARI_QC_status)
+toggle_colors <- unname(qc_status_pal_full[status_levels_for_toggle])
+col_names <- names(qc)
+
+datatable(
+  qc,
+  rownames = FALSE,
+  filter = "top",
+  class = "compact stripe hover",
+  width = "100%",
+  extensions = c("Buttons", "FixedColumns"),
+  options = list(
+    pageLength = 25,
+    scrollX = TRUE,
+    scrollY = "500px",
+    scrollCollapse = TRUE,
+    fixedColumns = list(leftColumns = 1),
+    dom = "Bfrtip",
+    buttons = list(
+      list(
+        extend = "", text = "\u2630 Filters", className = "btn-view btn-filters",
+        action = JS("function (e, dt, node, config) {
+          document.getElementById('filters-drawer').classList.add('open');
+          document.getElementById('filters-overlay').classList.add('open');
+        }")
+      )
+    )
+  ),
+  callback = JS(sprintf("
+    var statusColIdx = %d;
+    var statusLevels = %s;
+    var statusColors = %s;
+    var colNames = %s;
+
+    if (!document.getElementById('filters-drawer')) {
+      var overlay = document.createElement('div');
+      overlay.id = 'filters-overlay';
+      overlay.className = 'filters-overlay';
+      document.body.appendChild(overlay);
+
+      var drawer = document.createElement('div');
+      drawer.id = 'filters-drawer';
+      drawer.className = 'filters-drawer';
+
+      var statusRows = statusLevels.map(function(lvl, i) {
+        return '<div class=\"toggle-row\">' +
+          '<span class=\"toggle-label\">' + lvl + '</span>' +
+          '<label class=\"toggle-switch\" style=\"--on-color:' + statusColors[i] + ';\">' +
+          '<input type=\"checkbox\" class=\"status-toggle\" data-status=\"' + lvl + '\" checked>' +
+          '<span class=\"toggle-slider\"></span>' +
+          '</label></div>';
+      }).join('');
+
+      var colRows = colNames.map(function(name, i) {
+        return '<label class=\"filter-checkbox-row\">' +
+          '<input type=\"checkbox\" class=\"col-toggle\" data-col=\"' + i + '\" checked>' +
+          '<span class=\"filter-checkbox-box\"></span>' +
+          '<span class=\"filter-checkbox-label\">' + name.replace(/_/g, ' ') + '</span>' +
+          '</label>';
+      }).join('');
+
+      drawer.innerHTML =
+        '<div class=\"filters-drawer-header\">' +
+          '<span class=\"filters-drawer-title\">Filters</span>' +
+          '<button id=\"filters-close-btn\" class=\"filters-close-btn\" type=\"button\">&times;</button>' +
+        '</div>' +
+        '<div class=\"filters-drawer-body\">' +
+          '<div class=\"filters-section\">' +
+            '<div class=\"filters-section-title-row\">' +
+              '<div class=\"filters-section-title\">QC status</div>' +
+              '<div class=\"filters-actions\">' +
+                '<span class=\"filter-action-btn\" id=\"btn-select-all-status\">Select All</span> | ' +
+                '<span class=\"filter-action-btn\" id=\"btn-clear-all-status\">Clear All</span>' +
+              '</div>' +
+            '</div>' +
+            statusRows +
+          '</div>' +
+          '<div class=\"filters-section\">' +
+            '<div class=\"filters-section-title-row\">' +
+              '<div class=\"filters-section-title\">Columns</div>' +
+              '<div class=\"filters-actions\">' +
+                '<span class=\"filter-action-btn\" id=\"btn-select-all-cols\">Select All</span> | ' +
+                '<span class=\"filter-action-btn\" id=\"btn-clear-all-cols\">Clear All</span>' +
+              '</div>' +
+            '</div>' +
+            '<div class=\"filters-col-scroll\">' + colRows + '</div>' +
+          '</div>' +
+        '</div>';
+
+      document.body.appendChild(drawer);
+    }
+
+    var theadNode = table.table().header();
+    if (theadNode.rows.length > 1) {
+      var filterCell = theadNode.rows[1].cells[statusColIdx];
+      if (filterCell) filterCell.style.visibility = 'hidden';
+    }
+
+    // Close the filter drawer from the close button or page overlay.
+    // Drawer closing
+    function closeDrawer() {
+      document.getElementById('filters-drawer').classList.remove('open');
+      document.getElementById('filters-overlay').classList.remove('open');
+    }
+    document.getElementById('filters-close-btn').addEventListener('click', closeDrawer);
+    document.getElementById('filters-overlay').addEventListener('click', closeDrawer);
+
+    // Toggle visibility for all table columns.
+    // Column Select/Clear All
+    document.getElementById('btn-select-all-cols').addEventListener('click', function() {
+      document.querySelectorAll('.col-toggle').forEach(function(cb) { cb.checked = true; });
+      table.columns().visible(true);
+    });
+    document.getElementById('btn-clear-all-cols').addEventListener('click', function() {
+      document.querySelectorAll('.col-toggle').forEach(function(cb) { cb.checked = false; });
+      table.columns().visible(false);
+    });
+
+    // Keep individual column checkboxes synchronized with DataTables.
+    // Individual Column Toggles
+    document.querySelectorAll('.col-toggle').forEach(function(cb) {
+      cb.addEventListener('change', function() {
+        var idx = parseInt(this.getAttribute('data-col'));
+        table.column(idx).visible(this.checked);
+      });
+    });
+    table.on('column-visibility.dt', function(e, settings, colIdx, state) {
+      var cb = document.querySelector('.col-toggle[data-col=\"' + colIdx + '\"]');
+      if (cb) cb.checked = state;
+    });
+
+    // Filter rows using the currently selected QC statuses.
+    // Helper for Status Regex Search
+    function updateStatusSearch() {
+      var active = [];
+      document.querySelectorAll('.status-toggle').forEach(function(c) {
+        if (c.checked) active.push(c.getAttribute('data-status'));
+      });
+      var regex = active.length ? '^(' + active.join('|') + ')$' : '$^';
+      table.column(statusColIdx).search(regex, true, false).draw();
+    }
+
+    // Enable or disable all QC-status filters.
+    // Status Select/Clear All
+    document.getElementById('btn-select-all-status').addEventListener('click', function() {
+      document.querySelectorAll('.status-toggle').forEach(function(cb) { cb.checked = true; });
+      updateStatusSearch();
+    });
+    document.getElementById('btn-clear-all-status').addEventListener('click', function() {
+      document.querySelectorAll('.status-toggle').forEach(function(cb) { cb.checked = false; });
+      updateStatusSearch();
+    });
+
+    // Reapply the status filter whenever a toggle changes.
+    // Individual Status Toggles
+    document.querySelectorAll('.status-toggle').forEach(function(cb) {
+      cb.addEventListener('change', updateStatusSearch);
+    });
+  ",
+  status_col_idx,
+  jsonlite::toJSON(status_levels_for_toggle),
+  jsonlite::toJSON(toggle_colors),
+  jsonlite::toJSON(col_names)
+  ))
+) |>
+  formatStyle("GARI_QC_status",
+              backgroundColor = styleEqual(levels(qc$GARI_QC_status), qc_status_pal)) |>
+  formatStyle(columns = names(qc), fontSize = "85%")
+```
+
+```{r}
+# Custom CSS styles the DataTables controls and filter drawer.
+#| label: qc-full-table-css3
+#| echo: false
+#| results: asis
+
+cat('
+<style>
+.dt-buttons { display: flex; flex-wrap: wrap; align-items: center; gap: 4px;
+  padding: 8px 0; border-bottom: 1px solid #eee; margin-bottom: 10px; }
+.dt-button, .dt-buttons .dt-button {
+  font-family: Consolas, monospace !important; font-size: 12px !important;
+  padding: 6px 12px !important; border-radius: 6px !important;
+  border: 1px solid transparent !important; font-weight: 500 !important;
+}
+.btn-view { background: #fff !important; color: #555 !important; border-color: #ddd !important; }
+.btn-view:hover { background: #f5f5f5 !important; }
+
+.filters-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.15);
+  opacity: 0; pointer-events: none; transition: opacity 0.25s; z-index: 998;
+}
+.filters-overlay.open { opacity: 1; pointer-events: auto; }
+
+.filters-drawer {
+  position: fixed; top: 0; right: 0; height: 100vh; width: 320px;
+  background: #fff; box-shadow: -4px 0 20px rgba(0,0,0,0.15);
+  transform: translateX(100%);
+  transition: transform 0.25s ease;
+  z-index: 999; display: flex; flex-direction: column;
+  font-family: Consolas, monospace;
+}
+.filters-drawer.open { transform: translateX(0); }
+
+.filters-drawer-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 20px; border-bottom: 1px solid #eee;
+}
+.filters-drawer-title { font-size: 16px; font-weight: 600; color: #222; font-family: sans-serif; }
+.filters-close-btn {
+  background: none; border: none; font-size: 22px; line-height: 1;
+  color: #888; cursor: pointer; padding: 4px;
+}
+.filters-close-btn:hover { color: #222; }
+
+.filters-drawer-body { padding: 16px 20px; overflow-y: auto; flex: 1; }
+.filters-section { margin-bottom: 24px; }
+
+/* New CSS for Title Row and Select/Clear All */
+.filters-section-title-row {
+  display: flex; align-items: center; justify-content: space-between; 
+  margin-bottom: 10px;
+}
+.filters-section-title {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;
+  color: #999; font-weight: 600; font-family: sans-serif;
+  margin-bottom: 0; /* Reset margin since it is handled by the row now */
+}
+.filters-actions { font-size: 11px; color: #aaa; font-family: sans-serif; }
+.filter-action-btn { 
+  color: #0E9E6E; cursor: pointer; 
+  text-decoration: underline; text-decoration-color: transparent;
+  transition: text-decoration-color 0.2s;
+}
+.filter-action-btn:hover { text-decoration-color: #0E9E6E; }
+
+.toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; }
+.toggle-label { font-size: 13.5px; color: #333; font-family: sans-serif; }
+.toggle-switch { position: relative; display: inline-block; width: 40px; height: 22px; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-slider { position: absolute; cursor: pointer; inset: 0; background: #ccc; border-radius: 22px; transition: background 0.2s; }
+.toggle-slider::before { content: ""; position: absolute; height: 16px; width: 16px; left: 3px; bottom: 3px;
+  background: white; border-radius: 50%; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+.toggle-switch input:checked + .toggle-slider { background: var(--on-color, #0E9E6E); }
+.toggle-switch input:checked + .toggle-slider::before { transform: translateX(18px); }
+
+.filters-col-scroll { max-height: 340px; overflow-y: auto; }
+.filter-checkbox-row {
+  display: flex; align-items: center; gap: 10px; padding: 6px 0;
+  cursor: pointer; user-select: none;
+}
+.filter-checkbox-row input { display: none; }
+.filter-checkbox-box {
+  width: 18px; height: 18px; border: 1.5px solid #bbb; border-radius: 3px;
+  flex-shrink: 0; position: relative; transition: all 0.15s;
+}
+.filter-checkbox-row input:checked + .filter-checkbox-box {
+  background: #0E9E6E; border-color: #0E9E6E;
+}
+.filter-checkbox-row input:checked + .filter-checkbox-box::after {
+  content: ""; position: absolute; left: 5px; top: 1px;
+  width: 5px; height: 10px; border: solid white;
+  border-width: 0 2px 2px 0; transform: rotate(45deg);
+}
+.filter-checkbox-label { font-size: 13.5px; color: #333; font-family: sans-serif; text-transform: capitalize; }
+</style>
+')
+```
+:::
+
+## [Assembly statistics]{.underline}
+
+The following section focusses on general statistics of the assembly, regarding contiguity, size, sequencing depth (coverage) and should be interpreted in the context of the sequencing technology and genome complexity of the organism concerned.
+
+### Total number of contigs
+
+The total number of contigs in a genome assembly is informative about its contiguity and quality. A lower contig count typically indicates a more contiguous, less fragmented assembly, consistent with high-quality sequencing and assembly. A higher contig count more often reflects fragmentation, incomplete assembly, contamination, or underlying technical issues.
+
+::: panel-tabset
+## QC status
+
+```{r}
+#| fig-width: 9
+#| fig-height: 6
+box_plot(qc, "assembly_num_contigs", "GARI_QC_status", qc_status_pal, y_title = "Total number of contigs")
+```
+
+## Reference species
+
+```{r}
+#| fig-width: 9
+#| fig-height: 6
+box_plot(qc, "assembly_num_contigs", "reference_species", taxon_pal, y_title = "Total number of contigs", show_legend = FALSE)
+```
+:::
+
+### N50 and L50
+
+N50 and L50 are metrics used to evaluate the contiguity and quality of genome assemblies:
+
+**N50 (length):** the length of the shortest contig among the set of largest contigs that together comprise 50% of the total assembly length. In short it means 50% of the assembly is in contigs of this length or larger. A higher N50 indicates longer, more contiguous sequence.
+
+**L50 (count):** the minimum number of contigs required to reach that same 50% threshold. A lower L50 indicates that fewer contigs were needed, again consistent with a more contiguous assembly.
+
+::: panel-tabset
+## QC status
+
+```{r}
+#| fig-width: 9
+#| fig-height: 7
+marginal_plot(qc, "assembly_N50", "assembly_L50", "GARI_QC_status", qc_status_pal,
+              x_title = "N50", y_title = "L50", legend_side = "bottom")
+```
+
+## Reference species
+
+```{r}
+#| fig-width: 9
+#| fig-height: 7
+marginal_plot(qc, "assembly_N50", "assembly_L50", "reference_species", spp_pal,
+              x_title = "N50", y_title = "L50", legend_side = "right")
+```
+:::
+
+### Assembly length
+
+The combined sum of all contigs in the assembly (total number of basepairs in the assembly) - provides a measure of overall assembly size relative to the expected genome size of the reference species.
+
+::: panel-tabset
+## QC status
+
+```{r}
+#| fig-width: 9
+#| fig-height: 6
+box_plot(qc, "assembly_length", "GARI_QC_status", qc_status_pal, y_title = "Assembly length")
+```
+
+## Reference species
+
+```{r}
+#| fig-width: 9
+#| fig-height: 6
+box_plot(qc, "assembly_length", "reference_species", taxon_pal, y_title = "Assembly length", show_legend = FALSE)
+```
+:::
+
+### Average sequence depth
+
+The average sequence depth denotes the mean number of times each base position in the genome assembly was sequenced (covered). Higher sequence depth generally corresponds to greater confidence in the accuracy of individual base calls and in the completeness of the assembly.
+
+::: panel-tabset
+## QC status
+
+```{r}
+#| fig-width: 9
+#| fig-height: 6
+box_plot(qc, "assembly_average_coverage", "GARI_QC_status", qc_status_pal, y_title = "Average sequence depth")
+```
+
+## Reference species
+
+```{r}
+#| fig-width: 9
+#| fig-height: 6
+box_plot(qc, "assembly_average_coverage", "reference_species", taxon_pal, y_title = "Average sequence depth", show_legend = FALSE)
+```
+:::
+
+### Percentage of mapped reads
+
+The percentage of mapped reads describes the proportion of sequencing reads successfully aligned back to the assembly. A high percentage is indicative of good sequence alignment and of sequencing data with minimal contamination or error.
+
+::: panel-tabset
+## QC status
+
+```{r}
+#| fig-width: 9
+#| fig-height: 6
+box_plot(qc, "reads_mapped_asm_percentage", "GARI_QC_status", qc_status_pal, y_title = "Percent of mapped reads (%)")
+```
+
+## Reference species
+
+```{r}
+#| fig-width: 9
+#| fig-height: 6
+box_plot(qc, "reads_mapped_asm_percentage", "reference_species", taxon_pal, y_title = "Percent of mapped reads (%)", show_legend = FALSE)
+```
+:::
+
+### GC content
+
+The average GC content of an assembly is a species-characteristic trait, a divergence from the expected GC content of a species can indicate contamination but an abundance of plasmids may also shift the GC content.
+
+::: panel-tabset
+## QC status
+
+```{r}
+#| fig-width: 9
+#| fig-height: 6
+box_plot(qc, "assembly_GC_percentage", "GARI_QC_status", qc_status_pal,
+         y_title = "Assembly GC content (%)")
+```
+
+## Reference species
+
+```{r}
+#| fig-width: 9
+#| fig-height: 6
+box_plot(qc, "assembly_GC_percentage", "reference_species", taxon_pal,
+         y_title = "Assembly GC content (%)", show_legend = FALSE)
+```
+:::
+
+### Reference identity
+
+The average nucleotide identity to the reference genome identified via skani. Average nucleotide identity is a measure of genomic similarity between two sequences, commonly used to assess the relatedness of bacterial strains. High identity values indicate that the assembled genome closely resembles its matched reference.
+
+::: panel-tabset
+## QC status
+
+```{r}
+#| fig-width: 9
+#| fig-height: 6
+box_plot(qc, "reference_identity", "GARI_QC_status", qc_status_pal, y_title = "Reference Identity (%)",
+          extra_hover_col = "reference_accession", extra_hover_label = "Reference accession")
+```
+
+## Reference species
+
+```{r}
+#| fig-width: 9
+#| fig-height: 6
+box_plot(qc, "reference_identity", "reference_species", taxon_pal, y_title = "Reference Identity (%)",
+          extra_hover_col = "reference_accession", extra_hover_label = "Reference accession", show_legend = FALSE)
+```
+:::
+
+## [Genomic completeness]{.underline}
+
+The genomic completeness and contamination of each assembly are estimated using [CheckM](https://ecogenomics.github.io/CheckM/), which evaluates the presence and copy number of a curated set of marker genes known to occur as single copies across a given phylogenetic lineage.
+
+### CheckM completeness
+
+Completeness reflects the proportion of expected marker genes recovered in the assembly. High completeness (approaching 100%) indicates that the assembly captures the genome in near-entirety.
+
+::: panel-tabset
+## QC status
+
+```{r}
+#| fig-width: 9
+#| fig-height: 6
+box_plot(qc, "assembly_checkM_completeness", "GARI_QC_status", qc_status_pal, y_title = "CheckM completeness (%)")
+```
+
+## Reference species
+
+```{r}
+#| fig-width: 9
+#| fig-height: 6
+box_plot(qc, "assembly_checkM_completeness", "reference_species", taxon_pal, y_title = "CheckM completeness (%)", show_legend = FALSE)
+```
+:::
+
+### CheckM contamination
+
+Contamination reflects the proportion of marker genes recovered in duplicate — an occurrence not expected within a single, clean genome, and typically indicative of DNA from more than one organism being co-assembled. Contamination values may also depict intraspecies contamination, can be interpreted using the checkM strain heterogenity value (QC table).
+
+::: panel-tabset
+## QC status
+
+```{r}
+#| fig-width: 9
+#| fig-height: 6
+box_plot(qc, "assembly_checkM_contamination", "GARI_QC_status", qc_status_pal, y_title = "CheckM contamination (%)")
+```
+
+## Reference species
+
+```{r}
+#| fig-width: 9
+#| fig-height: 6
+box_plot(qc, "assembly_checkM_contamination", "reference_species", taxon_pal, y_title = "CheckM contamination (%)", show_legend = FALSE)
+```
+:::
+
+## [Contamination estimates]{.underline}
+
+Contamination of each sample is estimated using [Kraken2](https://github.com/DerrickWood/kraken2) against the reference database specified for the GARI run. Classification is performed independently at both the read level (prior to assembly) and the assembly level (on the final contigs/scaffolds); comparing the two indicates whether contamination detected in the raw reads was substantially removed during assembly, or persisted into the final genome. Assembly based values are normalized to reflect the percentage of basepairs instead of sequences.
+
+### Kraken2 - target
+
+Percentage of reads (x-axis) and of the assembly, normalized (y-axis), assigned to the Kraken2 target taxon specified in GARI.
+
+::: panel-tabset
+## QC status
+
+```{r}
+#| fig-width: 9
+#| fig-height: 7
+marginal_plot(qc, "reads_tax_class_target_percentage",
+              "assembly_tax_class_target_percentage_normalized",
+              "GARI_QC_status", qc_status_pal,
+              x_title = "Reads Kraken2 target (%)", y_title = "Assembly Kraken2 target (%)")
+```
+
+## Reference species
+
+```{r}
+#| fig-width: 9
+#| fig-height: 7
+marginal_plot(qc, "reads_tax_class_target_percentage",
+              "assembly_tax_class_target_percentage_normalized",
+              "reference_species", taxon_pal,
+              x_title = "Reads Kraken2 target (%)", y_title = "Assembly Kraken2 target (%)")
+```
+:::
+
+### Kraken2 - host
+
+Percentage of reads (x-axis) and of the assembly, normalized (y-axis), assigned to the Kraken2 host taxon specified in GARI.
+
+::: panel-tabset
+## QC status
+
+```{r}
+#| fig-width: 9
+#| fig-height: 7
+marginal_plot(qc, "reads_tax_class_host_percentage",
+              "assembly_tax_class_host_percentage_normalized",
+              "GARI_QC_status", qc_status_pal,
+              x_title = "Reads Kraken2 host (%)", y_title = "Assembly Kraken2 host (%)")
+```
+
+## Reference species
+
+```{r}
+#| fig-width: 9
+#| fig-height: 7
+marginal_plot(qc, "reads_tax_class_host_percentage",
+              "assembly_tax_class_host_percentage_normalized",
+              "reference_species", taxon_pal,
+              x_title = "Reads Kraken2 host (%)", y_title = "Assembly Kraken2 host (%)")
+```
+:::
+
+### Kraken2 - unclassified
+
+Percentage of reads (x-axis) and of the assembly, normalized (y-axis), that could not be assigned to any taxon by Kraken2 using the provided database.
+
+::: panel-tabset
+## QC status
+
+```{r}
+#| fig-width: 9
+#| fig-height: 7
+marginal_plot(qc, "reads_tax_class_unclassified_percentage",
+              "assembly_tax_class_unclassified_percentage_normalized",
+              "GARI_QC_status", qc_status_pal,
+              x_title = "Reads Kraken2 unclassified (%)", y_title = "Assembly Kraken2 unclassified (%)")
+```
+
+## Reference species
+
+```{r}
+#| fig-width: 9
+#| fig-height: 7
+marginal_plot(qc, "reads_tax_class_unclassified_percentage",
+              "assembly_tax_class_unclassified_percentage_normalized",
+              "reference_species", taxon_pal,
+              x_title = "Reads Kraken2 unclassified (%)", y_title = "Assembly Kraken2 unclassified (%)")
+```
+:::
+
+## [Version & databases]{.underline}
+
+```{r}
+#| label: tool-versions
+#| echo: false
+#| message: false
+
+# Collect distinct tool and database values for reproducibility.
+tool_info <- data.frame(
+  Field = c("GARI_version", "assembler", "GARI_skani_DB", "Kraken2_DB"),
+  Value = c(get_unique(qc$GARI_version), get_unique(qc$GARI_assembler),
+            get_unique(qc$GARI_skani_DB), get_unique(qc$GARI_kraken2_DB))
+)
+
+kable(tool_info, col.names = c("", ""), align = "l") |>
+  kable_styling(bootstrap_options = c("bordered", "hover"), full_width = FALSE, position = "left") |>
+  column_spec(1, bold = TRUE, border_right = TRUE, width = "16em")
+```
+

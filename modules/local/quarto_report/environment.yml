@@ -1,0 +1,15 @@
+name: gari-qc-report
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - quarto
+  - r-base>=4.1
+  - r-plotly
+  - r-dt
+  - r-dplyr
+  - r-tidyr
+  - r-knitr
+  - r-kableextra
+  - r-htmltools
+  - r-jsonlite
