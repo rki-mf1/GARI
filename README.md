@@ -55,7 +55,7 @@ nextflow pull rki-mf1/GARI
 # check the available release versions and development branches
 nextflow info rki-mf1/GARI
 # select a recent release and run
-nextflow run rki-mf1/GARI -r v1.3.0 -profile <singularity, docker, conda, mamba> -params-file params.yaml
+nextflow run rki-mf1/GARI -r v1.3.1 -profile <singularity, docker, conda, mamba> -params-file params.yaml
 ```
 
 Another option is to clone the repository and run the pipeline but we recommend using the `nextflow pull` option and stable release versions via `-r`. 
@@ -99,6 +99,8 @@ When executing the pipeline on a HPC with a queuing system you might want to lim
 | skesa_params | NO |  additional parameters to add to the SKESA command | string | |
 | skani_params | NO |  additional parameters to add to the skani command | string | |
 | thresholds | NO | path to thresholds in json format used for QC assessment | string | 'assets/QC_thresholds.json' |
+| html_report_title | NO | title for html report | string | 'GARI_QC_Report' |
+| html_report_author | NO | author specified in html report | string | [] |
 | publish_dir_enabled | NO | set to true to keep outputs of each tool in a separate results folder | boolean | false |
 | publish_dir_mode | NO | Nextflow method used to save pipeline results to output directory. Options: 'copy', 'copyNoFollow', 'link', 'move', 'rellink', 'symlink' | string | 'copy' |
 
@@ -176,11 +178,11 @@ export NXF_SINGULARITY_CACHEDIR='/path/to/NEXTFLOW_CACHE_folder/'
 
 ## Credits
 
-GARI was originally written by Maximilian Driller.
+GARI was originally written by Maximilian Driller Povill.
 
 We thank the following people for their extensive assistance in the development of this pipeline:
 
-Caroline Roschek, Marie Lataretu, Silver A. Wolf, Torsten Houwaart, Lakshmipriya Thrukonda, Vladimir Bajić and Mustafa Helal
+Caroline Roschek, Benedict Lourduraj, Marie Lataretu, Silver A. Wolf, Torsten Houwaart, Lakshmipriya Thrukonda, Vladimir Bajić and Mustafa Helal
 
 <!-- TODO nf-core: If applicable, make list of people who have also contributed -->
 
