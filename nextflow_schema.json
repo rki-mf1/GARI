@@ -92,6 +92,18 @@
                     "description": "Parameters to use for FASTP",
                     "fa_icon": "fas fa-file-csv"
                 },
+                "fastqc_params": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Parameters to use for FASTP",
+                    "fa_icon": "fas fa-file-csv"
+                },
+                "multiqc_params": {
+                    "type": "string",
+                    "default": "--interactive",
+                    "description": "Parameters to use for FASTP",
+                    "fa_icon": "fas fa-file-csv"
+                },
                 "assemblyscan_params": {
                     "type": "string",
                     "default": "--json",
