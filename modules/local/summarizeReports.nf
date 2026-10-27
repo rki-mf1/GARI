@@ -8,7 +8,7 @@ process CREATE_REPORT {
 
     input:
       file ('*')
-      path outdir
+      val prefix
 
     output:
       path '*.tsv'        , emit: tsv
@@ -19,7 +19,7 @@ process CREATE_REPORT {
     """
     summarizeReports.py \\
         --g . \\
-        --p $outdir
+        --p $prefix
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
