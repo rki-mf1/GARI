@@ -56,6 +56,9 @@ include { SPADES } from '../modules/nf-core/spades/main'
 include { SHOVILL } from '../modules/nf-core/shovill/main'
 include { ASSEMBLYSCAN } from '../modules/nf-core/assemblyscan/main'
 include { SKANI_SEARCH } from '../modules/nf-core/skani/search/main'
+include { FASTQC } from '../modules/nf-core/fastqc/main'
+include { MULTIQC } from '../modules/nf-core/multiqc/main'
+
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN MAIN WORKFLOW
@@ -109,6 +112,28 @@ workflow GARI {
     // ! There is currently no tooling to help you write a sample sheet schema
 
     if (params.qc_mode==false) {
+
+        FASTQC (
+            INPUT_CHECK.out.reads
+        )
+        ch_versions = ch_versions.mix(FASTQC.out.versions)
+
+        ch_fastqc_html = FASTQC.out.html
+            .map { meta, html -> html }
+            .flatMap { html -> html }
+            .collect()
+
+        ch_fastqc_zip = FASTQC.out.zip
+            .map { meta, zip -> zip }
+            .flatMap { zip -> zip }
+            .collect()
+
+        MULTIQC (
+            ch_fastqc_html,
+            ch_fastqc_zip
+        )
+        ch_versions = ch_versions.mix(MULTIQC.out.versions)
+
         FASTP (
             INPUT_CHECK.out.reads, 
             [], 
@@ -251,6 +276,7 @@ workflow GARI {
             ch_skani_db
         )
         ch_versions = ch_versions.mix(STAT_SUMMARY.out.versions)
+
         CREATE_REPORT (
             STAT_SUMMARY.out.json.collect(),
             params.outdir
