@@ -868,7 +868,6 @@ datatable(
 ```
 
 ```{r}
-# Custom CSS styles the DataTables controls and filter drawer.
 #| label: qc-full-table-css3
 #| echo: false
 #| results: asis

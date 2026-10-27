@@ -1,6 +1,5 @@
 process QUARTO_REPORT {
 
-    tag "${qc_tsv.baseName}"
     publishDir params.outdir, mode: 'copy'
 
     conda "environment.yml"
