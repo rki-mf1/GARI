@@ -1,10 +1,10 @@
 process CREATE_REPORT {
     label 'process_single'
 
-    conda "conda-forge::pandas=1.2.5 conda-forge::openpyxl"
+    conda "conda-forge::pandas=1.2.5 conda-forge::openpyxl=3.1.5"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'library://mdriller/gari/pandas_openpyxl:latest' :
-        'library://mdriller/gari/pandas_openpyxl:latest' }"
+        'community.wave.seqera.io/library/pandas_openpyxl:acd440c10fea94e1' :
+        'community.wave.seqera.io/library/pandas_openpyxl:acd440c10fea94e1' }"
 
     input:
       file ('*')
