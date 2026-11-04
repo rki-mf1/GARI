@@ -95,13 +95,13 @@
                 "fastqc_params": {
                     "type": "string",
                     "default": "",
-                    "description": "Parameters to use for FASTP",
+                    "description": "Parameters to use for FASTQC",
                     "fa_icon": "fas fa-file-csv"
                 },
                 "multiqc_params": {
                     "type": "string",
                     "default": "--interactive",
-                    "description": "Parameters to use for FASTP",
+                    "description": "Parameters to use for MULTIQC",
                     "fa_icon": "fas fa-file-csv"
                 },
                 "assemblyscan_params": {
