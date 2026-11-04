@@ -57,7 +57,7 @@ nextflow pull rki-mf1/GARI
 # check the available release versions and development branches
 nextflow info rki-mf1/GARI
 # select a recent release and run
-nextflow run rki-mf1/GARI -r v1.3.1 -profile <singularity, docker, conda, mamba> -params-file params.yaml
+nextflow run rki-mf1/GARI -r v1.4.0 -profile <singularity, docker, conda, mamba> -params-file params.yaml
 ```
 
 Another option is to clone the repository and run the pipeline but we recommend using the `nextflow pull` option and stable release versions via `-r`. 
@@ -214,7 +214,10 @@ This pipeline uses code and infrastructure developed and maintained by the [nf-c
 > Philip Ewels, Alexander Peltzer, Sven Fillinger, Harshil Patel, Johannes Alneberg, Andreas Wilm, Maxime Ulysse Garcia, Paolo Di Tommaso & Sven Nahnsen.
 > _Nat Biotechnol._ 2020 Feb 13. doi: [10.1038/s41587-020-0439-x](https://dx.doi.org/10.1038/s41587-020-0439-x).
 >
+>Andrews, S. (2010). FastQC: A Quality Control Tool for High Throughput Sequence Data [Online Software]. Babraham Bioinformatics, Babraham Institute, Cambridge, United Kingdom. Verfügbar unter: Babraham Bioinformatics - FastQC
 > Shifu Chen, Yanqing Zhou, Yaru Chen, Jia Gu, fastp: an ultra-fast all-in-one FASTQ preprocessor, Bioinformatics, Volume 34, Issue 17, September 2018, Pages i884–i890, https://doi.org/10.1093/bioinformatics/bty560
+>
+>Ewels P, Magnusson M, Lundin S, Käller M. MultiQC: summarize analysis results for multiple tools and samples in a single report. Bioinformatics. 2016 Oct 1;32(19):3047-8. doi: 10.1093/bioinformatics/btw354. PMID: 27312411.
 >
 > Wood, D.E., Lu, J. & Langmead, B. Improved metagenomic analysis with Kraken 2. Genome Biol 20, 257 (2019). https://doi.org/10.1186/s13059-019-1891-0
 >
