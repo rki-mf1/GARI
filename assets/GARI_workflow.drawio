@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0">
   <diagram name="Seite-1" id="cIDOGWYvVzSzvH49cVRE">
-    <mxGraphModel dx="2284" dy="2075" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="2240" dy="2056" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -297,7 +297,7 @@
           <mxGeometry height="4.55" width="4.55" x="270" y="370" as="geometry" />
         </mxCell>
         <mxCell id="AjrS4u9YngEpX_1BVrvA-516" parent="1" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=15;" value="&lt;font style=&quot;font-size: 15px;&quot;&gt;Identification of reads/contigs belonging to expected genus and host (for assembly the output is additonally normalized to reflect basepair resolution)&lt;/font&gt;" vertex="1">
-          <mxGeometry height="30" width="160" x="220" y="520" as="geometry" />
+          <mxGeometry height="110" width="160" x="211.57999999999998" y="485" as="geometry" />
         </mxCell>
         <mxCell id="AjrS4u9YngEpX_1BVrvA-517" edge="1" parent="1" source="AjrS4u9YngEpX_1BVrvA-516" style="endArrow=none;dashed=1;html=1;rounded=0;exitX=1;exitY=0;exitDx=0;exitDy=0;" target="AjrS4u9YngEpX_1BVrvA-518" value="">
           <mxGeometry height="50" relative="1" width="50" as="geometry">
@@ -374,8 +374,8 @@
             <mxPoint x="970" y="370" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="AjrS4u9YngEpX_1BVrvA-538" parent="1" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=15;" value="&lt;font style=&quot;font-size: 15px;&quot;&gt;Four main outputs are poduced an assembly (fasta), a QC report per assembly (json) and a merged QC report for all assemblies processed (tsv) and a html providing a visual overview&amp;nbsp;&lt;/font&gt;" vertex="1">
-          <mxGeometry height="72.73" width="130" x="1020" y="275.45" as="geometry" />
+        <mxCell id="AjrS4u9YngEpX_1BVrvA-538" parent="1" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=15;" value="&lt;div align=&quot;left&quot;&gt;&lt;font style=&quot;font-size: 15px;&quot;&gt;Four main outputs are produced:&lt;/font&gt;&lt;/div&gt;&lt;div align=&quot;left&quot;&gt;&lt;ul&gt;&lt;li&gt;&lt;font style=&quot;font-size: 15px;&quot;&gt;an assembly (fasta) per sample&lt;/font&gt;&lt;/li&gt;&lt;li&gt;&lt;font style=&quot;font-size: 15px;&quot;&gt;a QC report per assembly (json)&amp;nbsp;&lt;/font&gt;&lt;/li&gt;&lt;li&gt;&lt;font style=&quot;font-size: 15px;&quot;&gt;a merged QC report for all assemblies processed (tsv)&lt;/font&gt;&lt;/li&gt;&lt;li&gt;&lt;font style=&quot;font-size: 15px;&quot;&gt;a html report providing a visual overview&amp;nbsp;&lt;/font&gt;&lt;/li&gt;&lt;/ul&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="223.64" width="160" x="1010" y="200.91000000000003" as="geometry" />
         </mxCell>
         <mxCell id="J0x96L4pLX_jCq6a0jDY-2" edge="1" parent="1" style="endArrow=none;html=1;rounded=1;strokeWidth=5;fontSize=16;exitX=0.5;exitY=0;exitDx=0;exitDy=0;fillColor=#e1d5e7;strokeColor=#9673a6;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="J0x96L4pLX_jCq6a0jDY-13" value="">
           <mxGeometry height="50" relative="1" width="50" as="geometry">
@@ -506,10 +506,15 @@
         <mxCell id="Kn9x6oyp8h1PCZdLqcmy-4" parent="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;rounded=1;rotation=0;strokeWidth=2;fillColor=#e6d0de;gradientColor=#d5739d;strokeColor=#996185;" value="" vertex="1">
           <mxGeometry height="20" width="20" x="579.84" y="315" as="geometry" />
         </mxCell>
-        <mxCell id="EoDgmpqb9TyLi64S32LC-4" edge="1" parent="1" source="AjrS4u9YngEpX_1BVrvA-538" style="endArrow=none;dashed=1;html=1;rounded=0;exitX=0;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;" target="AjrS4u9YngEpX_1BVrvA-537" value="">
+        <mxCell id="EoDgmpqb9TyLi64S32LC-4" edge="1" parent="1" source="AjrS4u9YngEpX_1BVrvA-538" style="endArrow=none;dashed=1;html=1;rounded=0;exitX=0;exitY=0.25;exitDx=0;exitDy=0;" target="AjrS4u9YngEpX_1BVrvA-537" value="">
           <mxGeometry height="50" relative="1" width="50" as="geometry">
             <mxPoint x="1020" y="310" as="sourcePoint" />
             <mxPoint x="970" y="370" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="RHnWMw1ro8vDShdNDf0z-2" edge="1" parent="1" source="AjrS4u9YngEpX_1BVrvA-537" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0;exitDx=0;exitDy=0;defaultLabelBackgroundColor=page;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="971.8611111111113" y="366.38888888888914" as="targetPoint" />
           </mxGeometry>
         </mxCell>
         <mxCell id="AjrS4u9YngEpX_1BVrvA-537" parent="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;rounded=1;rotation=0;strokeWidth=2;" value="" vertex="1">
