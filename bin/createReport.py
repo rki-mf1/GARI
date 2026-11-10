@@ -157,6 +157,12 @@ def parseBBMap(covPath):
 def checkThresholds(QCHash, refSpecies, thresh_Hash):
 
   t_expected_species = args.sp
+  
+  # special case for Shigella to be treated as E.coli
+  if t_expected_species.startswith("Shigella"):
+    t_expected_species = "Escherichia coli"
+  if "Shigella" in refSpecies:
+    refSpecies = "Escherichia coli"
 
   # max flags allowed --> more than x flags = FAILED classification
   #maxFlagsAllowed = 3
@@ -211,7 +217,7 @@ def checkThresholds(QCHash, refSpecies, thresh_Hash):
         # if not a full match try to only match genus
         if t_expected_species.split(" ")[0].upper() in refSpecies.upper():
           flagged = True
-          errorList.append("wrong_reference")
+          errorList.append("wrong_reference")    
         else:
           error = True
           errorList.append("wrong_reference")
