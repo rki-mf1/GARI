@@ -13,6 +13,8 @@
 Nextflow pipeline for the de novo genome reconstruction of bacterial pathogens.
 The pipeline comprises of the following steps/modules:
 1. Read QC
+    - [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) to generate a raw data QC report
+    - [multiqc](https://github.com/multiqc/multiqc) to summarite all FastQC reports into one raw data QC report
 	- [fastp](https://github.com/OpenGene/fastp) to remove remaining adapters and perform very basic quality trimming
 	- [Kraken2](https://github.com/DerrickWood/kraken2) to check for contamination
 2. Genome Assembly/Reconstruction
