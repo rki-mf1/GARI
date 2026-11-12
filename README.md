@@ -13,6 +13,8 @@
 Nextflow pipeline for the de novo genome reconstruction of bacterial pathogens.
 The pipeline comprises of the following steps/modules:
 1. Read QC
+    - [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) to generate a raw data QC report
+    - [multiqc](https://github.com/multiqc/multiqc) to summarite all FastQC reports into one raw data QC report
 	- [fastp](https://github.com/OpenGene/fastp) to remove remaining adapters and perform very basic quality trimming
 	- [Kraken2](https://github.com/DerrickWood/kraken2) to check for contamination
 2. Genome Assembly/Reconstruction
@@ -22,7 +24,7 @@ The pipeline comprises of the following steps/modules:
 	- [bbmap](https://sourceforge.net/projects/bbmap/) to remap the reads to the assembly and calculate coverage, etc.
 	- [assembly-scan](https://github.com/rpetit3/assembly-scan) to produce general assembly statistics
 	- [Kraken2](https://github.com/DerrickWood/kraken2) to check for contamination
-	- [skani](https://github.com/bluenote-1577/skani) to identify the reference genome with the highest nucleotide identity.
+	- [skani](https://github.com/bluenote-1577/skani) to identify the reference genome with the highest nucleotide identity
 	- [CheckM](https://github.com/Ecogenomics/CheckM) to check for genomic completeness and contamination using conserved single-copy core genes
 4. Classification combining read & assembly parameters  
 
@@ -46,6 +48,8 @@ The pipeline comprises of the following steps/modules:
 > to set-up Nextflow. Make sure to [test your setup](https://nf-co.re/docs/usage/introduction#how-to-run-a-pipeline)
 > with `-profile test` before running the workflow on actual data. (NOT SETUP YET...)
 
+**IMPORTANT:**
+> GARI requires Nextflow 23.04.0 or later and uses the v1 syntax parser. Starting with Nextflow 26.04, the strict syntax parser (v2) is enabled by default. To run GARI on these releases, set export NXF_SYNTAX_PARSER=v1 before launching the pipeline.
 
 Now, you can install the pipeline using:
 
@@ -55,7 +59,7 @@ nextflow pull rki-mf1/GARI
 # check the available release versions and development branches
 nextflow info rki-mf1/GARI
 # select a recent release and run
-nextflow run rki-mf1/GARI -r v1.3.0 -profile <singularity, docker, conda, mamba> -params-file params.yaml
+nextflow run rki-mf1/GARI -r v1.4.0 -profile <singularity, docker, conda, mamba> -params-file params.yaml
 ```
 
 Another option is to clone the repository and run the pipeline but we recommend using the `nextflow pull` option and stable release versions via `-r`. 
@@ -75,33 +79,39 @@ When executing the pipeline on a HPC with a queuing system you might want to lim
 
 
 ## Inputs:
-### Parameters and Filter Options
+### Pipeline parameters 
 
-| name |  required (to set by user) |  description | type in config  | default value |
+| name | required | description | type in config  | default value |
 |---|---|---|---|---|
 | input | YES | path to input samplesheet in csv format (more detailed explanation below) | string | null |
 | outdir | YES | path to output directory | string | null |
 | skani_db | YES | path to precomputed skani database to use fro reference/species verification | string | null |
 | kraken_db | NO | path to precomputed Kraken2 database to use for classification | string | null (will download and use the babykraken DB if no local DB is specified) |
-| ete3_db | NO | Path to folder where taxa.sqlite and taxa.sqlite.traverse.pkl are stored (needed for ete3). If not set it will download it in every iteration. | string | '' (will download the ncbi taxdump for each iteration) |
+| ete3_db | NO | Path to folder where taxa.sqlite and taxa.sqlite.traverse.pkl are stored (needed for ete3). If not set it will download it in every iteration. | string | null (will download the ncbi taxdump for each iteration) |
 | tmp_dir | NO | path to temp directory (used for some processes) | string | /tmp/ |
 | qc_mode | NO | if set to true expects assemblies as input and only performs QC | boolean | false |
-| preset | NO | predefined preset settings to use (more details below) | string | |
+| preset | NO | predefined preset settings to use (more details below) | string | null |
 | assembler | NO | assembler to use (options: 'spades',  'shovill' or 'skesa')| string | 'spades' |
-| checkm_db | NO | path to local copy of checkM database, if not set checkM downloads the database itself | string | |
+| checkm_db | NO | path to local copy of checkM database, if not set checkM downloads the database itself | string | null |
 | min_size | NO | minimum contig size to filter out/remove | integer | 200 |
 | fastp_params | NO | additional parameters to add to the FASTP command | string | '--detect_adapter_for_pe' |
-| assemblyscan_params | NO | additional parameters to add to the assembly_scan command | string | '--json' (json flag required for QC assessment!) |
+| assemblyscan_params | NO | additional parameters to add to the assembly_scan command **(json flag required for QC assessment!)** | string | '--json' |
 | krakenR_params | NO |  additional parameters to add to the KRAKEN2 command assessing reads | string | '--minimum-base-quality 10 --minimum-hit-groups 3 --confidence 0.05' |
 | krakenA_params | NO |  additional parameters to add to the KRAKEN2 command assessing assemblies | string | '--minimum-base-quality 10 --minimum-hit-groups 3 --confidence 0.05' |
 | spades_params | NO |  additional parameters to add to the SPADES command | string | '--isolate' |
-| shovill_params | NO |  additional parameters to add to the SHOVILL command | string | |
-| skesa_params | NO |  additional parameters to add to the SKESA command | string | |
-| skani_params | NO |  additional parameters to add to the skani command | string | |
+| shovill_params | NO |  additional parameters to add to the SHOVILL command | string | null |
+| skesa_params | NO |  additional parameters to add to the SKESA command | string | null |
+| skani_params | NO |  additional parameters to add to the skani command | string | null |
 | thresholds | NO | path to thresholds in json format used for QC assessment | string | 'assets/QC_thresholds.json' |
+| html_report_title | NO | title for html report | string | 'GARI_QC_Report' |
+| html_report_author | NO | author specified in html report | string | null |
 | publish_dir_enabled | NO | set to true to keep outputs of each tool in a separate results folder | boolean | false |
 | publish_dir_mode | NO | Nextflow method used to save pipeline results to output directory. Options: 'copy', 'copyNoFollow', 'link', 'move', 'rellink', 'symlink' | string | 'copy' |
 
+> **Warning:**
+> Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those
+> provided by the `-c` Nextflow option can be used to provide any configuration _**except for parameters**_;
+> see [docs](https://nf-co.re/usage/configuration#custom-configuration-files).
 
 ### Detailed walkthrough 
 First, prepare a samplesheet with your **input** data that looks as follows, with each row representing a pair of fastq files (paired end):
@@ -121,21 +131,27 @@ S1,/path/to/S1_ASM.fasta,,Escherichia coli
 S2,/path/to/S2_ASM.fasta,,Acinetobacter baumannii
 ...
 ```
-The **kraken_db** is the path of the Kraken2 database used to classify reads and assembly. Some precomputed Kraken2 databses can be found [here](https://benlangmead.github.io/aws-indexes/k2).
+The **kraken_db** is the path of the Kraken2 database used to classify reads and assembly. Some precomputed Kraken2 databases can be found [here](https://benlangmead.github.io/aws-indexes/k2).
 
-The **skani_db** is the path of the skani database used to check and identify the closest reference genome. We recommend the use of the GTDB database. A link to precomputed databases as well as a tutorial on how to set up a local version can be found [here](https://github.com/bluenote-1577/skani/wiki/Tutorial:-setting-up-the-GTDB-genome-database-to-search-against).
+The **skani_db** is the path of the skani database used to check and identify the closest reference genome. We recommend the use of the GTDB database. A link to precomputed databases as well as a tutorial on how to set up a local version can be found [here](https://github.com/bluenote-1577/skani/wiki/Tutorial:-setting-up-the-GTDB-genome-database-to-search-against). 
+> **IMPORTANT:** GARI uses skani version v0.4.0 and older sketches (< v0.3) are not compatible.
 
-> **Warning:**
-> Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those
-> provided by the `-c` Nextflow option can be used to provide any configuration _**except for parameters**_;
-> see [docs](https://nf-co.re/usage/configuration#custom-configuration-files).
+## Outputs:
+The **assemblies** are created in fasta format and located within the assembly subfolder in the output directory.
+
+The **QC statistics** of various tools are stored in a json per sample within the QC_reports subdirectory.Summarized QC reports (tsv and xlsx) are stored in the main output directory.
+
+The **pipeline_info** subdirectory contains software versions as well execution traces and reports generated by nextflow.
+
+Additionally, if the option **publish_dir_enabled** (see above) is set to true, the outputs of all tools are also saved in the **results** subfolder, with a separate folder for each sample.
+
 
 ## Thresholds and QC filters:
-GARI outputs a variety of assembly and assembly quality statistics that can be found in the final GARI QC report. A subset of these values is used to "classify" each generated assembly into the categories: "PASSED", "FLAGGED" and "FAILED". \
+GARI outputs a variety of assembly and assembly quality statistics that can be found in the final GARI QC report. A subset of these values is used to classify each generated assembly into the categories: "PASSED", "FLAGGED" and "FAILED". 
 
 Here is an overview of parameters and thresholds used for the assessment:
 
-| parameter | only species specific | default threshold | description |
+| parameter | species specific | default threshold | description |
 |---|---|---|---|
 flag_max_total_contigs | NO | 500 | - |
 flag_AvgCov | NO | 50 | - |
@@ -155,8 +171,8 @@ fail_min_length | YES | - | - |
 flag_max_GC |  YES | - | - |
 flag_min_GC | YES | - | - |
 
-Thresholds are defined in the file [`QC_thresholds.json`](assets/QC_thresholds.json) within the GARI assests folder. Species specific thresholds are defined for 56 relevant bacterial pathogens. These species specific thresholds were calculated using complete RefSeq genomes from NCBI. Thresholds to flag assemblies are generally based on the 10/90% quantiles of the RefSeq assemblies while thresholds to fail assemblies are based on the 0/100% quantiles. \
-Feel free to add a new species to QC_thresholds.json if needed. 
+Thresholds are defined in the file [`QC_thresholds.json`](assets/QC_thresholds.json) within the GARI assests folder. Species specific thresholds are defined for 56 relevant bacterial pathogens. These species specific thresholds were calculated using complete RefSeq genomes from NCBI. Thresholds to flag assemblies are generally based on the 10/90% quantiles of the metrics for RefSeq assemblies while thresholds to fail assemblies are based on the 0/100% quantiles. \
+Feel free to add a new species to QC_thresholds.json, if needed. 
 
 ## Presets:
 GARI allows to define presets of run wide parameters. This is mostly useful when running GARI with specific settings that should be also be applied to a later dataset, so the parameters don't need to be specified for each run. \
@@ -176,11 +192,11 @@ export NXF_SINGULARITY_CACHEDIR='/path/to/NEXTFLOW_CACHE_folder/'
 
 ## Credits
 
-GARI was originally written by Maximilian Driller.
+GARI was originally written by Maximilian Driller Povill.
 
 We thank the following people for their extensive assistance in the development of this pipeline:
 
-Caroline Roschek, Marie Lataretu, Silver A. Wolf, Torsten Houwaart, Lakshmipriya Thrukonda, Vladimir Bajić and Mustafa Helal
+Caroline Roschek, Benedict Lourduraj, Marie Lataretu, Michael Piechotta, Silver A. Wolf, Torsten Houwaart, Lakshmipriya Thrukonda, Vladimir Bajić and Mustafa Helal
 
 <!-- TODO nf-core: If applicable, make list of people who have also contributed -->
 
@@ -200,16 +216,21 @@ This pipeline uses code and infrastructure developed and maintained by the [nf-c
 > Philip Ewels, Alexander Peltzer, Sven Fillinger, Harshil Patel, Johannes Alneberg, Andreas Wilm, Maxime Ulysse Garcia, Paolo Di Tommaso & Sven Nahnsen.
 > _Nat Biotechnol._ 2020 Feb 13. doi: [10.1038/s41587-020-0439-x](https://dx.doi.org/10.1038/s41587-020-0439-x).
 >
+>Andrews, S. (2010). FastQC: A Quality Control Tool for High Throughput Sequence Data [Online Software]. Babraham Bioinformatics, Babraham Institute, Cambridge, United Kingdom. Verfügbar unter: Babraham Bioinformatics - FastQC
 > Shifu Chen, Yanqing Zhou, Yaru Chen, Jia Gu, fastp: an ultra-fast all-in-one FASTQ preprocessor, Bioinformatics, Volume 34, Issue 17, September 2018, Pages i884–i890, https://doi.org/10.1093/bioinformatics/bty560
 >
->  Prjibelski, A., Antipov, D., Meleshko, D., Lapidus, A., & Korobeynikov, A. (2020). Using SPAdes de novo assembler. Current Protocols in Bioinformatics, 70, e102. doi: 10.1002/cpbi.102 
+>Ewels P, Magnusson M, Lundin S, Käller M. MultiQC: summarize analysis results for multiple tools and samples in a single report. Bioinformatics. 2016 Oct 1;32(19):3047-8. doi: 10.1093/bioinformatics/btw354. PMID: 27312411.
 >
 > Wood, D.E., Lu, J. & Langmead, B. Improved metagenomic analysis with Kraken 2. Genome Biol 20, 257 (2019). https://doi.org/10.1186/s13059-019-1891-0
 >
 > Parks DH, Imelfort M, Skennerton CT, Hugenholtz P, Tyson GW. CheckM: assessing the quality of microbial genomes recovered from isolates, single cells, and metagenomes. Genome Res. 2015 Jul;25(7):1043-55. doi: 10.1101/gr.186072.114. Epub 2015 May 14. PMID: 25977477; PMCID: PMC4484387.
 >
+> BBMap - Bushnell B. - sourceforge.net/projects/bbmap/
+>
 > Prjibelski, A., Antipov, D., Meleshko, D., Lapidus, A., & Korobeynikov, A. (2020). Using SPAdes de novo assembler. Current Protocols in Bioinformatics, 70, e102. doi: 10.1002/cpbi.102 
 >
 > Souvorov, A., Agarwala, R. & Lipman, D. SKESA: strategic k-mer extension for scrupulous assemblies. Genome Biol 19, 153 (2018). https://doi.org/10.1186/s13059-018-1540-z
+>
+> Seemann T (2016) Shovill Github https://github.com/tseemann/shovill
 >
 > Jim Shaw and Yun William Yu. Fast and robust metagenomic sequence comparison through sparse chaining with skani. Nature Methods (2023). https://doi.org/10.1038/s41592-023-02018-3

@@ -4,8 +4,8 @@ process KRAKEN_NORMALIZE {
     conda "conda-forge::python=3.9.21 conda-forge::ete3=3.1.3 conda-forge::pandas=2.2.3"
     
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'library://caromanesco/gari/python_ete3_pandas:v.1.0.0' :
-        'library://caromanesco/gari/python_ete3_pandas:v.1.0.0' }"
+        'community.wave.seqera.io/library/python_ete3_pandas:03f70031e8e51f66' :
+        'community.wave.seqera.io/library/python_ete3_pandas:03f70031e8e51f66' }"
 
     input: 
         tuple val(metas), path(kraken)

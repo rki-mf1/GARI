@@ -20,9 +20,19 @@
             "git_sha": "d497a4868ace3302016ea8ed4b395072d5e833cd",
             "installed_by": ["modules"]
           },
+          "fastqc": {
+            "branch": "master",
+            "git_sha": "18eb358065b06f2d3419e37383b002fe7db3da02",
+            "installed_by": ["modules"]
+          },
           "kraken2/kraken2": {
             "branch": "master",
             "git_sha": "603ecbd9f45300c9788f197d2a15a005685b4220",
+            "installed_by": ["modules"]
+          },
+          "multiqc": {
+            "branch": "master",
+            "git_sha": "98403d15b0e50edae1f3fec5eae5e24982f1fade",
             "installed_by": ["modules"]
           },
           "shovill": {

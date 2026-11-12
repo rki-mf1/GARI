@@ -22,7 +22,7 @@ WorkflowGari.initialise(params, log)
 */
 // MODULES
 //
-include { DOWNLOAD_KRAKENDB } from '../modules/local/downloadKrakenDB.nf'
+include { DOWNLOAD_KRAKENDB } from '../modules/local/downloadKrakenDB'
 include { SKESA } from '../modules/local/skesa'
 include { STAT_SUMMARY } from '../modules/local/createMetaReport'
 include { STAT_SUMMARY_QC } from '../modules/local/createMetaReport_QC'
@@ -30,6 +30,9 @@ include { BBMAP_ALIGN } from '../modules/local/bbmap_cov'
 include { BBMAP_RENAME } from '../modules/local/bbmap_rename'
 include { CREATE_REPORT } from '../modules/local/summarizeReports'
 include { CHECKM_LINEAGEWF } from '../modules/local/checkM/main'
+include { KRAKEN_NORMALIZE} from '../modules/local/krakenNormalize/normalizeKraken'
+include { QUARTO_REPORT } from '../modules/local/quarto_report/main'
+
 
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
@@ -53,7 +56,9 @@ include { SPADES } from '../modules/nf-core/spades/main'
 include { SHOVILL } from '../modules/nf-core/shovill/main'
 include { ASSEMBLYSCAN } from '../modules/nf-core/assemblyscan/main'
 include { SKANI_SEARCH } from '../modules/nf-core/skani/search/main'
-include { KRAKEN_NORMALIZE} from '../modules/local/krakenNormalize/normalizeKraken.nf'
+include { FASTQC } from '../modules/nf-core/fastqc/main'
+include { MULTIQC } from '../modules/nf-core/multiqc/main'
+
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN MAIN WORKFLOW
@@ -68,8 +73,10 @@ workflow GARI {
 
     threshold_file = file(params.thresholds)
 
+    quarto_script = file("${projectDir}/bin/GARIQC_Report.qmd")
+
     if (params.ete3_db==''){
-        //placeholder for now
+        // set empty so database will be downloaded when module is executed
         ete3_database = ""
     }
     else{
@@ -105,6 +112,28 @@ workflow GARI {
     // ! There is currently no tooling to help you write a sample sheet schema
 
     if (params.qc_mode==false) {
+
+        FASTQC (
+            INPUT_CHECK.out.reads
+        )
+        ch_versions = ch_versions.mix(FASTQC.out.versions)
+
+        ch_fastqc_html = FASTQC.out.html
+            .map { meta, html -> html }
+            .flatMap { html -> html }
+            .collect()
+
+        ch_fastqc_zip = FASTQC.out.zip
+            .map { meta, zip -> zip }
+            .flatMap { zip -> zip }
+            .collect()
+
+        MULTIQC (
+            ch_fastqc_html,
+            ch_fastqc_zip
+        )
+        ch_versions = ch_versions.mix(MULTIQC.out.versions)
+
         FASTP (
             INPUT_CHECK.out.reads, 
             [], 
@@ -252,6 +281,15 @@ workflow GARI {
             STAT_SUMMARY.out.json.collect(),
             params.outdir
         )
+        ch_versions = ch_versions.mix(CREATE_REPORT.out.versions)
+
+        QUARTO_REPORT(
+           CREATE_REPORT.out.tsv,
+           quarto_script,
+           params.html_report_title,
+           params.html_report_author
+        )
+        ch_versions = ch_versions.mix(QUARTO_REPORT.out.versions)
     }
     else {
         // needs to be set to single_end since the assemblies are parsed as single_end
@@ -275,6 +313,15 @@ workflow GARI {
             STAT_SUMMARY_QC.out.json.collect(), 
             params.outdir
         )
+        ch_versions = ch_versions.mix(CREATE_REPORT.out.versions)
+
+        QUARTO_REPORT(
+            CREATE_REPORT.out.tsv,
+            quarto_script,
+            params.html_report_title,
+            params.html_report_author
+        )
+        ch_versions = ch_versions.mix(QUARTO_REPORT.out.versions)
     }
 
     CUSTOM_DUMPSOFTWAREVERSIONS (

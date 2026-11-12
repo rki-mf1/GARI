@@ -5,10 +5,6 @@ import json
 import argparse as ap 
 import ete3
 
-# expected Kraken outputs:   IGS-ID.output.txt
-
-# Kraken target and host reads vs assembly
-
 ### INPUT ###
 parser = ap.ArgumentParser(description="")
 parser.add_argument("-t", "--thresholds", type=str)
